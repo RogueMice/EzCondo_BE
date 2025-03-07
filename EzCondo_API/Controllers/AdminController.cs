@@ -26,7 +26,6 @@ namespace EzCondo_API.Controllers
             this.dbContext = dbContext;
         }
 
-        [AllowAnonymous]
         [HttpGet("Get-All-Users")]
         public async Task<IActionResult> GetAll(string? roleName)
         {
