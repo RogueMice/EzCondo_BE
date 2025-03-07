@@ -25,9 +25,11 @@ namespace EzConDo_Service.Implement
 
         public async Task<Citizen> AddOrUpdateCitizenAsync(CitizenDTO citizenDTO)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == citizenDTO.UserId) ?? throw new Exception("User không tồn tại !");
-            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(x => x.UserId == citizenDTO.UserId);
-            if(citizen is not null)
+            var user = await dbContext.Users.AsNoTracking()
+                                  .FirstOrDefaultAsync(u => u.Id == citizenDTO.UserId)
+                                  ?? throw new Exception("User không tồn tại !");
+            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.UserId);
+            if (citizen is not null)
             {
                 citizen.No = citizenDTO.No;
                 citizen.DateOfIssue = citizenDTO.DateOfIssue;
@@ -36,8 +38,14 @@ namespace EzConDo_Service.Implement
             else
             {
                 // Upload image on the Cloudinary if have
-                string? frontImageUrl = citizenDTO.FrontImage != null ? await cloudinaryService.UploadImageAsync(citizenDTO.FrontImage) : citizen?.FrontImage;
-                string? backImageUrl = citizenDTO.BackImage != null ? await cloudinaryService.UploadImageAsync(citizenDTO.BackImage) : citizen?.BackImage;
+                Task<string?> frontImageTask = citizenDTO.FrontImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.FrontImage)
+                                                : Task.FromResult<string?>(null);
+                Task<string?> backImageTask = citizenDTO.BackImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.BackImage)
+                                                : Task.FromResult<string?>(null);
+
+                await Task.WhenAll(frontImageTask, backImageTask);
                 //add citizen
                 citizen = new Citizen
                 {
@@ -45,8 +53,8 @@ namespace EzConDo_Service.Implement
                     No = citizenDTO.No,
                     DateOfIssue = citizenDTO.DateOfIssue,
                     DateOfExpiry = citizenDTO.DateOfExpiry,
-                    FrontImage = frontImageUrl,
-                    BackImage = backImageUrl
+                    FrontImage = frontImageTask.Result,
+                    BackImage = backImageTask.Result
                 };
                 dbContext.Add(citizen);
             }

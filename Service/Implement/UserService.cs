@@ -27,6 +27,7 @@ namespace Service.Service
         private readonly EzCondo_Data.Context.ApartmentDbContext dbContext;
         private readonly IPasswordHasher<User> passwordHasher;
         private readonly IConfiguration configuration;
+        private static readonly Random _random = new Random();
 
         public UserService(EzCondo_Data.Context.ApartmentDbContext dbContext, IPasswordHasher<User> passwordHasher,
             IConfiguration configuration)
@@ -64,8 +65,6 @@ namespace Service.Service
                 RoleName = user.Role.Name
             };
         }
-
-
 
         //Hash Password test at here !!!
         public static string HashPassword(string password)
@@ -250,7 +249,7 @@ namespace Service.Service
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new Exception("User Id invalid !");
 
             // Create code 
-            var code = new Random().Next(100000, 999999).ToString(); // 6 chữ số
+            string code = _random.Next(100000, 999999).ToString();
             var expireAt = DateTime.UtcNow.AddMinutes(10);
 
             var resetCode = await dbContext.PasswordResetCodes.FirstOrDefaultAsync(r => r.UserId == user.Id);
@@ -263,14 +262,13 @@ namespace Service.Service
                     Code = code,
                     ExpireAt = expireAt
                 };
-                dbContext.PasswordResetCodes.Add(resetCode);
+                await dbContext.PasswordResetCodes.AddAsync(resetCode);
             }
             else
             {
                 // Đã có -> ghi đè code cũ
                 resetCode.Code = code;
                 resetCode.ExpireAt = expireAt;
-                dbContext.PasswordResetCodes.Update(resetCode);
             }
 
             await dbContext.SaveChangesAsync();
@@ -279,7 +277,9 @@ namespace Service.Service
             var subject = "Yêu cầu đặt lại mật khẩu";
             var body = $@"Mã xác nhận của bạn là: {code}.</br>
                   Mã này có hiệu lực trong 10 phút.";
-            await SendEmailAsync(user.Email, subject, body);
+
+            // Offload gửi email sang background task để API trả về nhanh chóng
+            _ = Task.Run(() => SendEmailAsync(user.Email, subject, body));
 
             return;
         }

@@ -61,6 +61,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddDbContext<EzCondo_Data.Context.ApartmentDbContext>(options =>
                                                         options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
+
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICitizenService, CitizenService>();
