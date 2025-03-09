@@ -43,10 +43,8 @@ namespace Service.Service
                  .AsNoTracking()
                  .Include(u => u.Role)
                  .Include(u => u.Apartments)
-                 .SingleOrDefaultAsync(u => u.Email == dto.Email);
-
-            if (user == null)
-                throw new Exception("User not found");
+                 .SingleOrDefaultAsync(u => u.Email == dto.Email) 
+                 ?? throw new Exception("User not found");
 
             var result = passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password);
             if (result != PasswordVerificationResult.Success)
@@ -66,7 +64,6 @@ namespace Service.Service
             };
         }
 
-        //Hash Password test at here !!!
         public static string HashPassword(string password)
         {
             var passwordHasher = new PasswordHasher<object>();
@@ -106,12 +103,11 @@ namespace Service.Service
                                     .FirstOrDefaultAsync();
 
             if (roleAndEmailCheck == null)
-                throw new InvalidOperationException($"Role '{userDTO.RoleName}' không hợp lệ!");
+                throw new InvalidOperationException($"Role '{userDTO.RoleName}' invalid");
 
             if (roleAndEmailCheck.EmailExists)
-                throw new InvalidOperationException($"Email '{userDTO.Email}' đã tồn tại!");
+                throw new InvalidOperationException($"Email '{userDTO.Email}' existed");
 
-            // Tạo mật khẩu ngẫu nhiên
             string randomPassword = GenerateRandomPassword();
             var passwordHash = passwordHasher.HashPassword(null, randomPassword);
             var user = new User
@@ -141,11 +137,10 @@ namespace Service.Service
             dbContext.Apartments.Add(apartment);
             await dbContext.SaveChangesAsync();
 
-            // Gửi email với thông tin tài khoản
             Task.Run(() => SendWelcomeEmailAsync(user.Email, user.FullName, userDTO.RoleName, randomPassword));
             return user.Id;
         }
-        //Tạo pass random
+
         private string GenerateRandomPassword(int length = 8)
         {
             const string validChars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@$?_-";
@@ -154,7 +149,6 @@ namespace Service.Service
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        //Send email
         private async Task SendWelcomeEmailAsync(string email, string fullName, string roleName, string password)
         {
             string subject = "Thông tin tài khoản của bạn";
@@ -168,6 +162,7 @@ namespace Service.Service
 
             await SendEmailAsync(email, subject, body);
         }
+
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             var emailSettings = configuration.GetSection("EmailSettings");
@@ -250,7 +245,7 @@ namespace Service.Service
 
             // Create code 
             string code = _random.Next(100000, 999999).ToString();
-            var expireAt = DateTime.UtcNow.AddMinutes(10);
+            var expireAt = DateTime.UtcNow.AddMinutes(5);
 
             var resetCode = await dbContext.PasswordResetCodes.FirstOrDefaultAsync(r => r.UserId == user.Id);
             if (resetCode == null)
@@ -276,7 +271,7 @@ namespace Service.Service
             // Send email have code
             var subject = "Yêu cầu đặt lại mật khẩu";
             var body = $@"Mã xác nhận của bạn là: {code}.</br>
-                  Mã này có hiệu lực trong 10 phút.";
+                  Mã này có hiệu lực trong 5 phút.";
 
             // Offload gửi email sang background task để API trả về nhanh chóng
             _ = Task.Run(() => SendEmailAsync(user.Email, subject, body));
@@ -296,9 +291,6 @@ namespace Service.Service
 
             //Thay đổi pass và mã hóa mật khẩu
             user.Password = HashPassword(dto.NewPassword);
-
-            Console.Write("{Password chua hash: " + dto.NewPassword + " Password hash: " + user.Password);
-
             //Xóa code đã sử dụng trong db
             dbContext.PasswordResetCodes.Remove(resetCode);
 

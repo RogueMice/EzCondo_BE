@@ -14,6 +14,7 @@ using EzConDo_Service.Interface;
 using EzConDo_Service.Implement;
 using EzConDo_Service.Cloudinary;
 using EzConDo_Service.CloudinaryIntegration;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
             ValidateIssuer = false,
             ValidateAudience = false
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            // error 401
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var json = JsonConvert.SerializeObject(new
+                {
+                    status = 401,
+                    message = "You need to login to use this resource!"
+                });
+                return context.Response.WriteAsync(json);
+            },
+            // error 403
+            OnForbidden = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+
+                var json = JsonConvert.SerializeObject(new
+                {
+                    status = 403,
+                    message = "You can't access this resource!"
+                });
+                return context.Response.WriteAsync(json);
+            }
         };
     });
 
@@ -86,8 +119,8 @@ app.UseHttpsRedirection();
 
 //Declare Authen
 app.UseAuthentication();
-
 app.UseAuthorization();
+
 
 app.MapControllers();
 

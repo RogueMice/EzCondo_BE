@@ -76,14 +76,11 @@ namespace EzCondo_API.Controllers
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
                 configuration.GetSection("Appsettings:Token").Value));
-
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: cred);
-
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
             return (jwt);
         }
