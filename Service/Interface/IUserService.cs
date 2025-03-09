@@ -11,7 +11,7 @@ namespace Service.IService
     public interface IUserService
     {
         Task<UserViewDTO> ValidateUserAsync(LoginDTO dto);
-        Task<List<UserViewDTO>> GetUsersAsync(string? roleName);
+        Task<List<UserViewDTO>> GetUsersAsync(string? roleName, string? search);
 
         Task<Guid> AddUserAsync(AddUserDTO userDTO);
 

@@ -27,7 +27,7 @@ namespace EzConDo_Service.Implement
         {
             var user = await dbContext.Users.AsNoTracking()
                                   .FirstOrDefaultAsync(u => u.Id == citizenDTO.UserId)
-                                  ?? throw new Exception("User không tồn tại !");
+                                  ?? throw new Exception("User invalid !");
             var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.UserId);
             if (citizen is not null)
             {
@@ -44,9 +44,7 @@ namespace EzConDo_Service.Implement
                 Task<string?> backImageTask = citizenDTO.BackImage != null
                                                 ? cloudinaryService.UploadImageAsync(citizenDTO.BackImage)
                                                 : Task.FromResult<string?>(null);
-
                 await Task.WhenAll(frontImageTask, backImageTask);
-                //add citizen
                 citizen = new Citizen
                 {
                     UserId = citizenDTO.UserId,

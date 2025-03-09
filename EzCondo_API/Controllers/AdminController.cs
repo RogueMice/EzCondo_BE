@@ -26,10 +26,11 @@ namespace EzCondo_API.Controllers
             this.dbContext = dbContext;
         }
 
+        [AllowAnonymous]
         [HttpGet("Get-All-Users")]
-        public async Task<IActionResult> GetAll(string? roleName)
+        public async Task<IActionResult> GetAll(string? roleName, string? search)
         {
-            var users = await userService.GetUsersAsync(roleName);
+            var users = await userService.GetUsersAsync(roleName, search);
             if (users == null)
                 return BadRequest("Don't have any user !");
             return Ok(users);

@@ -18,6 +18,17 @@ using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .AllowAnyOrigin()  
+            .AllowAnyHeader()   
+            .AllowAnyMethod();  
+    });
+});
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -108,11 +119,14 @@ builder.Services.Configure<CloudinarySettings>(
 
 var app = builder.Build();
 
+//use cors
+app.UseCors("AllowAll");
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
