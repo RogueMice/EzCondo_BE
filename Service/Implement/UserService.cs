@@ -15,6 +15,7 @@ using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Intrinsics.Arm;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -279,7 +280,8 @@ namespace Service.Service
         public async Task<List<UserViewDTO>> GetUsersAsync(string? roleName, string? search)
         {
             var query = from u in dbContext.Users.AsNoTracking()
-                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId into ua
+                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId 
+                        into ua 
                         from a in ua.DefaultIfEmpty()
                         where (string.IsNullOrEmpty(roleName) || u.Role.Name == roleName)
                               && (string.IsNullOrEmpty(search) ||
@@ -300,6 +302,41 @@ namespace Service.Service
                         };
 
             return await query.ToListAsync();
+        }
+
+        public async Task<UserViewDTO?> GetCurrentUserInfoAsync(Guid userId)
+        {
+            var query = from u in dbContext.Users.AsNoTracking()
+                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId
+                        into ua
+                        from a in ua.DefaultIfEmpty()
+                        where userId == u.Id
+                        select new UserViewDTO
+                        {
+                            Id = u.Id,
+                            FullName = u.FullName,
+                            DateOfBirth = u.DateOfBirth,
+                            Gender = u.Gender,
+                            ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
+                            PhoneNumber = u.PhoneNumber,
+                            email = u.Email,
+                            Status = u.Status,
+                            RoleName = u.Role.Name
+                        };
+            return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO)
+        {
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.Id) ?? throw new Exception("User not found !");
+
+            user.FullName = userDTO.FullName;
+            user.PhoneNumber = userDTO.PhoneNumber;
+            user.Gender = userDTO.Gender;
+
+            dbContext.Users.Update(user);
+            await dbContext.SaveChangesAsync();
+            return userDTO;
         }
     }
 }

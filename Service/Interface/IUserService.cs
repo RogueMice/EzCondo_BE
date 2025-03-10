@@ -23,5 +23,9 @@ namespace Service.IService
 
         Task<string> GetPasswordAsync(ResetPasswordWithCodeDTO dto);
 
+        Task<UserViewDTO?> GetCurrentUserInfoAsync(Guid userId);
+
+        Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO);
+
     }
 }
