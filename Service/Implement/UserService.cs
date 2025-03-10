@@ -70,32 +70,6 @@ namespace Service.Service
             return passwordHasher.HashPassword(null, password);
         }
 
-        public async Task<List<UserViewDTO>> GetUsersAsync(string? roleName, string? search)
-        {
-            var query = from u in dbContext.Users.AsNoTracking()
-                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId into ua
-                        from a in ua.DefaultIfEmpty()
-                        where (string.IsNullOrEmpty(roleName) || u.Role.Name == roleName)
-                              && (string.IsNullOrEmpty(search) ||
-                                  u.FullName.Contains(search) ||
-                                  (a != null && a.ApartmentNumber.Contains(search)) ||
-                                  u.PhoneNumber.Contains(search))
-                        select new UserViewDTO
-                        {
-                            Id = u.Id,
-                            FullName = u.FullName,
-                            DateOfBirth = u.DateOfBirth,
-                            Gender = u.Gender,
-                            ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
-                            PhoneNumber = u.PhoneNumber,
-                            email = u.Email,
-                            Status = u.Status,
-                            RoleName = u.Role.Name
-                        };
-
-            return await query.ToListAsync();
-        }
-
         public async Task<Guid> AddUserAsync(AddUserDTO userDTO)
         {
             var normalizedRoleName = userDTO.RoleName.Trim().ToUpperInvariant();
@@ -300,6 +274,32 @@ namespace Service.Service
 
             await dbContext.SaveChangesAsync();
             return "Reset password is successful!!";
+        }
+
+        public async Task<List<UserViewDTO>> GetUsersAsync(string? roleName, string? search)
+        {
+            var query = from u in dbContext.Users.AsNoTracking()
+                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId into ua
+                        from a in ua.DefaultIfEmpty()
+                        where (string.IsNullOrEmpty(roleName) || u.Role.Name == roleName)
+                              && (string.IsNullOrEmpty(search) ||
+                                  u.FullName.Contains(search) ||
+                                  (a != null && a.ApartmentNumber.Contains(search)) ||
+                                  u.PhoneNumber.Contains(search))
+                        select new UserViewDTO
+                        {
+                            Id = u.Id,
+                            FullName = u.FullName,
+                            DateOfBirth = u.DateOfBirth,
+                            Gender = u.Gender,
+                            ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
+                            PhoneNumber = u.PhoneNumber,
+                            email = u.Email,
+                            Status = u.Status,
+                            RoleName = u.Role.Name
+                        };
+
+            return await query.ToListAsync();
         }
     }
 }

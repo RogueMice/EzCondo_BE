@@ -18,15 +18,22 @@ namespace EzCondo_API.Controllers
         private readonly IUserService userService;
         private readonly ICitizenService citizenService;
         private readonly ApartmentDbContext dbContext;
+        private readonly IService_service service_service;
+        private readonly IService_ImageService service_ImageService;
 
-        public AdminController(IUserService userService, ICitizenService citizenService, ApartmentDbContext dbContext)
+        public AdminController(IUserService userService, 
+                                ICitizenService citizenService, 
+                                ApartmentDbContext dbContext, 
+                                IService_service service_Service,
+                                IService_ImageService service_ImageService)
         {
             this.userService = userService;
             this.citizenService = citizenService;
             this.dbContext = dbContext;
+            this.service_service = service_Service;
+            this.service_ImageService = service_ImageService;
         }
 
-        [AllowAnonymous]
         [HttpGet("Get-All-Users")]
         public async Task<IActionResult> GetAll(string? roleName, string? search)
         {
@@ -71,6 +78,22 @@ namespace EzCondo_API.Controllers
             if (user == null)
                 return BadRequest("Delete User is failure !");
             return Ok(user);
+        }
+
+        [HttpPost("Add-Service")]
+        public async Task<IActionResult> AddService([FromBody] AddServiceDTO serviceDTO)
+        {
+            var service = await service_service.AddServiceAsync(serviceDTO);
+            if (service == null)
+                return BadRequest("Add service is failure !");
+            return Ok(service);
+        }
+
+        [HttpPost("Add-Service-Images")]
+        public async Task<IActionResult> AddServiceImages([FromForm] Service_ImageDTO serviceImageDTO)
+        {
+            await service_ImageService.AddServiceImagesAsync(serviceImageDTO);
+            return Ok("Add service images is successful !");
         }
     }
 }

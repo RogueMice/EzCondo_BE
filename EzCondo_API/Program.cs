@@ -109,6 +109,8 @@ builder.Services.AddDbContext<EzCondo_Data.Context.ApartmentDbContext>(options =
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICitizenService, CitizenService>();
+builder.Services.AddScoped<IService_service,ServiceOfSerivce>();
+builder.Services.AddScoped<IService_ImageService, ServiceImageOfService>();
 
 
 //Add cloud service
@@ -126,7 +128,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
