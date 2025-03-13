@@ -34,7 +34,7 @@ namespace EzCondo_API.Controllers
             this.service_ImageService = service_ImageService;
         }
 
-        [HttpGet("Get-All-Users")]
+        [HttpGet("get-all-users")]
         public async Task<IActionResult> GetAll(string? roleName, string? search)
         {
             var users = await userService.GetUsersAsync(roleName, search);
@@ -43,7 +43,7 @@ namespace EzCondo_API.Controllers
             return Ok(users);
         }
 
-        [HttpPost("Add-User")]
+        [HttpPost("add-user")]
         public async Task<IActionResult> AddUser([FromBody] AddUserDTO userDTO)
         {
             var user = await userService.AddUserAsync(userDTO);
@@ -53,7 +53,7 @@ namespace EzCondo_API.Controllers
         }
 
 
-        [HttpPost("Add-Or-Update-Citizen")]
+        [HttpPost("add-or-update-citizen")]
         public async Task<IActionResult> AddOrUpdateCitizen([FromForm] CitizenDTO citizenDTO)
         {
             var citizen = await citizenService.AddOrUpdateCitizenAsync(citizenDTO);
@@ -62,7 +62,7 @@ namespace EzCondo_API.Controllers
             return Ok("Success !!");
         }
 
-        [HttpPatch("Update-User")]
+        [HttpPatch("update-user")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDTO userDTO)
         {
             var user = await userService.UpdateUserAsync(userDTO);
@@ -71,7 +71,7 @@ namespace EzCondo_API.Controllers
             return Ok(user);
         }
 
-        [HttpDelete("Delete-User-By-Id")]
+        [HttpDelete("delete-user-by-id")]
         public async Task<IActionResult> DeleteUserById(Guid userId)
         {
             var user = await userService.DeleteUserAsync(userId);
@@ -80,7 +80,7 @@ namespace EzCondo_API.Controllers
             return Ok(user);
         }
 
-        [HttpPost("Add-Service")]
+        [HttpPost("add-service")]
         public async Task<IActionResult> AddService([FromBody] AddServiceDTO serviceDTO)
         {
             var service = await service_service.AddServiceAsync(serviceDTO);
@@ -89,7 +89,7 @@ namespace EzCondo_API.Controllers
             return Ok(service);
         }
 
-        [HttpPost("Add-Service-Images")]
+        [HttpPost("add-service-images")]
         public async Task<IActionResult> AddServiceImages([FromForm] Service_ImageDTO serviceImageDTO)
         {
             await service_ImageService.AddServiceImagesAsync(serviceImageDTO);

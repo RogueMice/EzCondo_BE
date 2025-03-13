@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace EzConDo_Service.CloudinaryIntegration
 {
@@ -26,21 +27,31 @@ namespace EzConDo_Service.CloudinaryIntegration
             _cloudinary = new CloudinaryDotNet.Cloudinary(account);
         }
 
-        public async Task<string> UploadImageAsync(IFormFile file)
+        public async Task<string> UploadImageAsync(IFormFile file, CancellationToken cancellationToken = default)
         {
             if (file == null || file.Length == 0)
                 return null;
-
-            using var stream = file.OpenReadStream();
-            var uploadParams = new ImageUploadParams()
+            try
             {
-                File = new FileDescription(file.FileName, stream),
-                Transformation = new Transformation().Width(500).Height(500).Crop("fill"),
-                Folder = "EzCondo_Cloud"
-            };
+                using var stream = file.OpenReadStream();
+                var uploadParams = new ImageUploadParams()
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Transformation = new Transformation().Width(500).Height(500).Crop("fill"),
+                    Folder = "EzCondo_Cloud"
+                };
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams, cancellationToken);
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-            return uploadResult.SecureUrl.AbsoluteUri;
+                if (uploadResult.Error != null)
+                {
+                    return null;
+                }
+                return uploadResult.SecureUrl.AbsoluteUri;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         public async Task<string> DeleteImageAsync(string url)

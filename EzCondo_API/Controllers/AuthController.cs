@@ -33,7 +33,7 @@ namespace EzCondo_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             var user = await userService.ValidateUserAsync(dto);
@@ -44,7 +44,7 @@ namespace EzCondo_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Forgot-Password")]
+        [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordDTO dto)
         {
             await userService.ForgotPasswordAsync(dto.Email);
@@ -52,7 +52,7 @@ namespace EzCondo_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Reset-Password")]
+        [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordWithCodeDTO dto)
         {
             return Ok(await userService.GetPasswordAsync(dto));

@@ -1,5 +1,6 @@
 ﻿using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +24,11 @@ namespace Service.IService
 
         Task<string> GetPasswordAsync(ResetPasswordWithCodeDTO dto);
 
-        Task<UserViewDTO?> GetCurrentUserInfoAsync(Guid userId);
+        Task<CurrentUserDTO?> GetCurrentUserInfoAsync(Guid userId);
 
         Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO);
+
+        Task<bool> AddOrUpdateAvt(Guid userId,IFormFile avt);
 
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.DTO
 {
-    public class UserViewDTO
+    public class CurrentUserDTO
     {
         public Guid Id { get; set; }
 
@@ -25,5 +25,7 @@ namespace EzConDo_Service.DTO
         public string Status { get; set; } = null!;
 
         public string RoleName { get; set; } = null!;
+
+        public string? avatar {  get; set; }
     }
 }

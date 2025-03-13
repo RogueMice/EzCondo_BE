@@ -8,18 +8,18 @@ namespace EzConDo_Service.DTO
 {
     public class UpdateUserDTO
     {
-        public Guid Id { get; set; }
+        public Guid id { get; set; }
 
-        public string FullName { get; set; } = null!;
+        public string fullName { get; set; } = null!;
 
-        public DateTime DateOfBirth { get; set; }
+        public DateTime dateOfBirth { get; set; }
 
-        public string Gender { get; set; } = null!;
+        public string gender { get; set; } = null!;
 
-        public string ApartmentNumber { get; set; } = null!;
+        public string apartmentNumber { get; set; } = null!;
 
-        public string PhoneNumber { get; set; } = null!;
+        public string phoneNumber { get; set; } = null!;
 
-        public string Status { get; set; } = null!;
+        public string status { get; set; } = null!;
     }
 }

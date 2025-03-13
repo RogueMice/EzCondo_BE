@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.DTO
 {
-    public class UserViewDTO
+    public class UserInforDTO
     {
         public Guid Id { get; set; }
 

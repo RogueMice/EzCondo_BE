@@ -19,7 +19,7 @@ namespace EzCondo_API.Controllers
             this.userService = userService;
         }
 
-        [HttpGet("Get-Infor-Me")]
+        [HttpGet("get-infor-me")]
         public async Task<IActionResult> GetMe()
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
@@ -28,12 +28,26 @@ namespace EzCondo_API.Controllers
             return Ok(user);
         }
 
-        [HttpPatch("Edit-Infor-Me")]
+        [HttpPatch("edit-infor-me")]
         public async Task<IActionResult> EditMe(EditUserDTO userDTO)
         {
             userDTO.Id = Guid.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid"));
             var user = await userService.EditCurrentUserInforAsync(userDTO);
             return Ok(user);
+        }
+
+
+        [HttpPost("add-or-update-avatar")]
+        public async Task<IActionResult> AddOrUpdateAvatar(IFormFile avatar)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) 
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            var result = await userService.AddOrUpdateAvt(user_Id, avatar);
+            if (!result)
+                return BadRequest("Something went wrong !");
+            return Ok("Avatar updated successfully!");
         }
     }
 }

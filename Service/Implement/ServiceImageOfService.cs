@@ -25,13 +25,13 @@ namespace EzConDo_Service.Implement
         }
         public async Task AddServiceImagesAsync(Service_ImageDTO serviceImageDTO)
         {
-            if (serviceImageDTO.ServiceImages == null || serviceImageDTO.ServiceImages.Count == 0)
+            if (serviceImageDTO.serviceImages == null || serviceImageDTO.serviceImages.Count == 0)
                 throw new Exception("At least one image is required.");
 
             bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == serviceImageDTO.service_Id);
             if (!serviceExists)
                 throw new Exception("Service not found");
-            var uploadTasks = serviceImageDTO.ServiceImages.Select(async image =>
+            var uploadTasks = serviceImageDTO.serviceImages.Select(async image =>
             {
                 try
                 {

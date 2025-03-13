@@ -26,31 +26,31 @@ namespace EzConDo_Service.Implement
         public async Task<Citizen> AddOrUpdateCitizenAsync(CitizenDTO citizenDTO)
         {
             var user = await dbContext.Users.AsNoTracking()
-                                  .FirstOrDefaultAsync(u => u.Id == citizenDTO.UserId)
+                                  .FirstOrDefaultAsync(u => u.Id == citizenDTO.userId)
                                   ?? throw new Exception("User invalid !");
-            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.UserId);
+            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.userId);
             if (citizen is not null)
             {
-                citizen.No = citizenDTO.No;
-                citizen.DateOfIssue = citizenDTO.DateOfIssue;
-                citizen.DateOfExpiry = citizenDTO.DateOfExpiry;
+                citizen.No = citizenDTO.no;
+                citizen.DateOfIssue = citizenDTO.dateOfIssue;
+                citizen.DateOfExpiry = citizenDTO.dateOfExpiry;
             }
             else
             {
                 // Upload image on the Cloudinary if have
-                Task<string?> frontImageTask = citizenDTO.FrontImage != null
-                                                ? cloudinaryService.UploadImageAsync(citizenDTO.FrontImage)
+                Task<string?> frontImageTask = citizenDTO.frontImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.frontImage)
                                                 : Task.FromResult<string?>(null);
-                Task<string?> backImageTask = citizenDTO.BackImage != null
-                                                ? cloudinaryService.UploadImageAsync(citizenDTO.BackImage)
+                Task<string?> backImageTask = citizenDTO.backImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.backImage)
                                                 : Task.FromResult<string?>(null);
                 await Task.WhenAll(frontImageTask, backImageTask);
                 citizen = new Citizen
                 {
-                    UserId = citizenDTO.UserId,
-                    No = citizenDTO.No,
-                    DateOfIssue = citizenDTO.DateOfIssue,
-                    DateOfExpiry = citizenDTO.DateOfExpiry,
+                    UserId = citizenDTO.userId,
+                    No = citizenDTO.no,
+                    DateOfIssue = citizenDTO.dateOfIssue,
+                    DateOfExpiry = citizenDTO.dateOfExpiry,
                     FrontImage = frontImageTask.Result,
                     BackImage = backImageTask.Result
                 };

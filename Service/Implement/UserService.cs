@@ -1,8 +1,10 @@
 ﻿using CloudinaryDotNet.Actions;
 using EzCondo_Data.Context;
 using EzCondo_Data.Domain;
+using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using MailKit.Net.Smtp;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,14 +30,16 @@ namespace Service.Service
         private readonly EzCondo_Data.Context.ApartmentDbContext dbContext;
         private readonly IPasswordHasher<User> passwordHasher;
         private readonly IConfiguration configuration;
+        private readonly CloudinaryService cloudinaryService;
         private static readonly Random _random = new Random();
 
         public UserService(EzCondo_Data.Context.ApartmentDbContext dbContext, IPasswordHasher<User> passwordHasher,
-            IConfiguration configuration)
+            IConfiguration configuration, CloudinaryService cloudinaryService)
         {
             this.dbContext = dbContext;
             this.passwordHasher = passwordHasher;
             this.configuration = configuration;
+            this.cloudinaryService = cloudinaryService;
         }
 
         public async Task<UserViewDTO> ValidateUserAsync(LoginDTO dto)
@@ -164,27 +168,27 @@ namespace Service.Service
 
         public async Task<Guid> UpdateUserAsync(UpdateUserDTO userDTO)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.Id) ?? throw new Exception("User Id invalid !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.id) ?? throw new Exception("User Id invalid !");
 
-            user.FullName = userDTO.FullName;
-            user.DateOfBirth = userDTO.DateOfBirth;
-            user.Gender = userDTO.Gender;
-            user.PhoneNumber = userDTO.PhoneNumber;
-            user.Status = userDTO.Status;
+            user.FullName = userDTO.fullName;
+            user.DateOfBirth = userDTO.dateOfBirth;
+            user.Gender = userDTO.gender;
+            user.PhoneNumber = userDTO.phoneNumber;
+            user.Status = userDTO.status;
             user.UpdateAt = DateTime.UtcNow;
 
-            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.Id);
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.id);
 
             if (apartment is not null)
             {
-                apartment.ApartmentNumber = userDTO.ApartmentNumber;
+                apartment.ApartmentNumber = userDTO.apartmentNumber;
             }
             else
             {
                 apartment = new Apartment()
                 {
                     Id = Guid.NewGuid(),
-                    ApartmentNumber = userDTO.ApartmentNumber,
+                    ApartmentNumber = userDTO.apartmentNumber,
                     ResidentNumber = 1,
                     Acreage = 100,
                     Description = "Nothing ....",
@@ -194,7 +198,7 @@ namespace Service.Service
             }
 
             await dbContext.SaveChangesAsync();
-            return userDTO.Id;
+            return userDTO.id;
         }
 
         public async Task<Guid> DeleteUserAsync(Guid userId)
@@ -304,14 +308,14 @@ namespace Service.Service
             return await query.ToListAsync();
         }
 
-        public async Task<UserViewDTO?> GetCurrentUserInfoAsync(Guid userId)
+        public async Task<CurrentUserDTO?> GetCurrentUserInfoAsync(Guid userId)
         {
             var query = from u in dbContext.Users.AsNoTracking()
                         join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId
                         into ua
                         from a in ua.DefaultIfEmpty()
                         where userId == u.Id
-                        select new UserViewDTO
+                        select new CurrentUserDTO
                         {
                             Id = u.Id,
                             FullName = u.FullName,
@@ -321,14 +325,15 @@ namespace Service.Service
                             PhoneNumber = u.PhoneNumber,
                             email = u.Email,
                             Status = u.Status,
-                            RoleName = u.Role.Name
+                            RoleName = u.Role.Name,
+                            avatar = u.Avatar
                         };
             return await query.FirstOrDefaultAsync();
         }
 
         public async Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.Id) ?? throw new Exception("User not found !");
+            var user = await dbContext.Users.FindAsync(userDTO.Id) ?? throw new Exception("User not found !");
 
             user.FullName = userDTO.FullName;
             user.PhoneNumber = userDTO.PhoneNumber;
@@ -337,6 +342,23 @@ namespace Service.Service
             dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
             return userDTO;
+        }
+
+        public async Task<bool> AddOrUpdateAvt(Guid userId,IFormFile avt)
+        {
+            var user = await dbContext.Users.FindAsync(userId);
+            if (user == null)
+                return false;
+            if(avt != null && avt.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(user.Avatar))
+                {
+                    await cloudinaryService.DeleteImageAsync(user.Avatar);
+                }
+                user.Avatar = await cloudinaryService.UploadImageAsync(avt);
+            }
+            await dbContext.SaveChangesAsync();
+            return true;
         }
     }
 }
