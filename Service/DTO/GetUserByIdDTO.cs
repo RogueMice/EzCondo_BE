@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.DTO
 {
-    public class UpdateUserDTO
+    public class GetUserByIdDTO
     {
         public Guid Id { get; set; }
 
         public string FullName { get; set; } = null!;
 
-        public DateTime DateOfBirth { get; set; }
+        public DateTime? DateOfBirth { get; set; }
 
         public string Gender { get; set; } = null!;
 
@@ -20,6 +20,20 @@ namespace EzConDo_Service.DTO
 
         public string PhoneNumber { get; set; } = null!;
 
+        public string Email { get; set; } = null!;
+
         public string Status { get; set; } = null!;
+
+        public string RoleName { get; set; } = null!;
+
+        public string No { get; set; } = null!;
+
+        public DateOnly DateOfIssue { get; set; }
+
+        public DateOnly DateOfExpiry { get; set; }
+
+        public string? FrontImage { get; set; }
+
+        public string? BackImage { get; set; }
     }
 }

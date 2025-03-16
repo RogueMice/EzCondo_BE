@@ -28,7 +28,9 @@ namespace Service.IService
 
         Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO);
 
-        Task<bool> AddOrUpdateAvt(Guid userId,IFormFile avt);
+        Task<bool> AddOrUpdateAvtAsync(Guid userId,IFormFile avt);
+
+        Task <GetUserByIdDTO?> GetUserByIdDTOAsync(Guid userId);
 
     }
 }

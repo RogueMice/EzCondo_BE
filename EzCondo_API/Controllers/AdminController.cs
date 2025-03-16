@@ -104,5 +104,14 @@ namespace EzCondo_API.Controllers
                 return Ok(citizen);
             return null; 
         }
+
+        [HttpGet("get-user-by-id")]
+        public async Task<IActionResult> GetUserById(Guid userId)
+        {
+            var users = await userService.GetUserByIdDTOAsync(userId);
+            if (users == null)
+                return BadRequest("Don't have any user !");
+            return Ok(users);
+        }
     }
 }

@@ -64,7 +64,7 @@ namespace Service.Service
                 Gender = user.Gender,
                 ApartmentNumber = user.Apartments?.FirstOrDefault()?.ApartmentNumber ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
-                email = user.Email,
+                Email = user.Email,
                 Status = user.Status,
                 RoleName = user.Role.Name
             };
@@ -183,41 +183,41 @@ namespace Service.Service
 
         public async Task<Guid> UpdateUserAsync(UpdateUserDTO userDTO)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.id) ?? throw new NotFoundException($"UserId {userDTO.id} not found !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.Id) ?? throw new NotFoundException($"UserId {userDTO.Id} not found !");
 
-            bool phoneExists = await dbContext.Users.AnyAsync(u => u.PhoneNumber == userDTO.phoneNumber && u.Id != userDTO.id);
+            bool phoneExists = await dbContext.Users.AnyAsync(u => u.PhoneNumber == userDTO.PhoneNumber && u.Id != userDTO.Id);
             if (phoneExists)
             {
-                throw new ConflictException($"Phone number '{userDTO.phoneNumber}' is already in use!");
+                throw new ConflictException($"Phone number '{userDTO.PhoneNumber}' is already in use!");
             }
 
-            user.FullName = userDTO.fullName;
-            user.DateOfBirth = userDTO.dateOfBirth;
-            user.Gender = userDTO.gender;
-            user.PhoneNumber = userDTO.phoneNumber;
-            user.Status = userDTO.status;
+            user.FullName = userDTO.FullName;
+            user.DateOfBirth = userDTO.DateOfBirth;
+            user.Gender = userDTO.Gender;
+            user.PhoneNumber = userDTO.PhoneNumber;
+            user.Status = userDTO.Status;
             user.UpdateAt = DateTime.UtcNow;
 
             bool apartmentNumberExists = await dbContext.Apartments.AnyAsync(
-                                                                        a => a.ApartmentNumber == userDTO.apartmentNumber
-                                                                        && a.UserId != userDTO.id);
+                                                                        a => a.ApartmentNumber == userDTO.ApartmentNumber
+                                                                        && a.UserId != userDTO.Id);
             if (apartmentNumberExists)
             {
-                throw new ConflictException($"Apartment number '{userDTO.apartmentNumber}' is already in use!");
+                throw new ConflictException($"Apartment number '{userDTO.ApartmentNumber}' is already in use!");
             }
 
-            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.id);
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.Id);
 
             if (apartment != null)
             {
-                apartment.ApartmentNumber = userDTO.apartmentNumber;
+                apartment.ApartmentNumber = userDTO.ApartmentNumber;
             }
             else
             {
                 apartment = new Apartment()
                 {
                     Id = Guid.NewGuid(),
-                    ApartmentNumber = userDTO.apartmentNumber,
+                    ApartmentNumber = userDTO.ApartmentNumber,
                     ResidentNumber = 1,
                     Acreage = 100,
                     Description = "Nothing ....",
@@ -227,7 +227,7 @@ namespace Service.Service
             }
 
             await dbContext.SaveChangesAsync();
-            return userDTO.id;
+            return userDTO.Id;
         }
 
         public async Task<Guid> DeleteUserAsync(Guid userId)
@@ -325,7 +325,7 @@ namespace Service.Service
                             Gender = u.Gender,
                             ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
                             PhoneNumber = u.PhoneNumber,
-                            email = u.Email,
+                            Email = u.Email,
                             Status = u.Status,
                             RoleName = u.Role.Name
                         };
@@ -339,6 +339,9 @@ namespace Service.Service
                         join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId
                         into ua
                         from a in ua.DefaultIfEmpty()
+                        join c in dbContext.Citizens.AsNoTracking() on u.Id equals c.UserId
+                        into uc 
+                        from c in uc.DefaultIfEmpty()
                         where userId == u.Id
                         select new CurrentUserDTO
                         {
@@ -348,10 +351,11 @@ namespace Service.Service
                             Gender = u.Gender,
                             ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
                             PhoneNumber = u.PhoneNumber,
-                            email = u.Email,
+                            Email = u.Email,
                             Status = u.Status,
                             RoleName = u.Role.Name,
-                            avatar = u.Avatar
+                            Avatar = u.Avatar,
+                            No = c != null ? c.No : string.Empty
                         };
             return await query.FirstOrDefaultAsync();
         }
@@ -375,7 +379,7 @@ namespace Service.Service
             return userDTO;
         }
 
-        public async Task<bool> AddOrUpdateAvt(Guid userId, IFormFile avt)
+        public async Task<bool> AddOrUpdateAvtAsync(Guid userId, IFormFile avt)
         {
             var user = await dbContext.Users.FindAsync(userId) ?? throw new NotFoundException($"UserId {userId} not found !"); ;
             if (user == null)
@@ -390,6 +394,36 @@ namespace Service.Service
             }
             await dbContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<GetUserByIdDTO?> GetUserByIdDTOAsync(Guid userId)
+        {
+            var query = from u in dbContext.Users.AsNoTracking()
+                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId
+                        into ua
+                        from a in ua.DefaultIfEmpty()
+                        join c in dbContext.Citizens.AsNoTracking() on u.Id equals c.UserId
+                        into uc
+                        from c in uc.DefaultIfEmpty()
+                        where userId == u.Id
+                        select new GetUserByIdDTO
+                        {
+                            Id = u.Id,
+                            FullName = u.FullName,
+                            DateOfBirth = u.DateOfBirth,
+                            Gender = u.Gender,
+                            ApartmentNumber = a != null ? a.ApartmentNumber : string.Empty,
+                            PhoneNumber = u.PhoneNumber,
+                            Email = u.Email,
+                            Status = u.Status,
+                            RoleName = u.Role.Name,
+                            No = c != null ? c.No : string.Empty,
+                            DateOfIssue = c != null ? c.DateOfIssue : default,
+                            DateOfExpiry = c != null ? (DateOnly)c.DateOfExpiry : default,
+                            FrontImage = c != null ? c.FrontImage : string.Empty,
+                            BackImage = c != null ? c.BackImage : string.Empty
+                        };
+            return await query.FirstOrDefaultAsync();
         }
     }
 }

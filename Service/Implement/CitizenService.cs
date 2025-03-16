@@ -27,37 +27,37 @@ namespace EzConDo_Service.Implement
         public async Task<Citizen> AddOrUpdateCitizenAsync(CitizenDTO citizenDTO)
         {
             var user = await dbContext.Users.AsNoTracking()
-                                  .FirstOrDefaultAsync(u => u.Id == citizenDTO.userId)
-                                  ?? throw new NotFoundException($"UserId {citizenDTO.userId} is not found");
-            bool noExists = await dbContext.Citizens.AnyAsync(c => c.No == citizenDTO.no && c.UserId != citizenDTO.userId);
+                                  .FirstOrDefaultAsync(u => u.Id == citizenDTO.UserId)
+                                  ?? throw new NotFoundException($"UserId {citizenDTO.UserId} is not found");
+            bool noExists = await dbContext.Citizens.AnyAsync(c => c.No == citizenDTO.No && c.UserId != citizenDTO.UserId);
             if (noExists)
             {
-                throw new ConflictException($"NO: {citizenDTO.no} is already in use!");
+                throw new ConflictException($"NO: {citizenDTO.No} is already in use!");
             }
 
-            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.userId);
+            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.UserId);
             if (citizen is not null)
             {
-                citizen.No = citizenDTO.no;
-                citizen.DateOfIssue = citizenDTO.dateOfIssue;
-                citizen.DateOfExpiry = citizenDTO.dateOfExpiry;
+                citizen.No = citizenDTO.No;
+                citizen.DateOfIssue = citizenDTO.DateOfIssue;
+                citizen.DateOfExpiry = citizenDTO.DateOfExpiry;
             }
             else
             {
                 // Upload image on the Cloudinary if have
-                Task<string?> frontImageTask = citizenDTO.frontImage != null
-                                                ? cloudinaryService.UploadImageAsync(citizenDTO.frontImage)
+                Task<string?> frontImageTask = citizenDTO.FrontImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.FrontImage)
                                                 : Task.FromResult<string?>(null);
-                Task<string?> backImageTask = citizenDTO.backImage != null
-                                                ? cloudinaryService.UploadImageAsync(citizenDTO.backImage)
+                Task<string?> backImageTask = citizenDTO.BackImage != null
+                                                ? cloudinaryService.UploadImageAsync(citizenDTO.BackImage)
                                                 : Task.FromResult<string?>(null);
                 await Task.WhenAll(frontImageTask, backImageTask);
                 citizen = new Citizen
                 {
-                    UserId = citizenDTO.userId,
-                    No = citizenDTO.no,
-                    DateOfIssue = citizenDTO.dateOfIssue,
-                    DateOfExpiry = citizenDTO.dateOfExpiry,
+                    UserId = citizenDTO.UserId,
+                    No = citizenDTO.No,
+                    DateOfIssue = citizenDTO.DateOfIssue,
+                    DateOfExpiry = citizenDTO.DateOfExpiry,
                     FrontImage = frontImageTask.Result,
                     BackImage = backImageTask.Result
                 };
@@ -74,12 +74,12 @@ namespace EzConDo_Service.Implement
                                         .AsNoTracking()
                                         .Select(c => new CitizenViewDTO
                                         {
-                                            userId = c.UserId,
-                                            no = c.No,
-                                            dateOfExpiry = (DateOnly)c.DateOfExpiry,
-                                            dateOfIssue = c.DateOfIssue,
-                                            frontImage = c.FrontImage,
-                                            backImage = c.BackImage
+                                            UserId = c.UserId,
+                                            No = c.No,
+                                            DateOfExpiry = (DateOnly)c.DateOfExpiry,
+                                            DateOfIssue = c.DateOfIssue,
+                                            FrontImage = c.FrontImage,
+                                            BackImage = c.BackImage
                                         }).ToListAsync();
             return citizens;
         }

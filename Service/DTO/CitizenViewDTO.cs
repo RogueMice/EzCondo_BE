@@ -9,16 +9,16 @@ namespace EzConDo_Service.DTO
 {
     public class CitizenViewDTO
     {
-        public Guid userId { get; set; }
+        public Guid UserId { get; set; }
 
-        public string no { get; set; } = null!;
+        public string No { get; set; } = null!;
 
-        public DateOnly dateOfIssue { get; set; }
+        public DateOnly DateOfIssue { get; set; }
 
-        public DateOnly dateOfExpiry { get; set; }
+        public DateOnly DateOfExpiry { get; set; }
 
-        public string? frontImage { get; set; }
+        public string? FrontImage { get; set; }
 
-        public string? backImage { get; set; }
+        public string? BackImage { get; set; }
     }
 }

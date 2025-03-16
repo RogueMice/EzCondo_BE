@@ -44,7 +44,7 @@ namespace EzCondo_API.Controllers
             if (userId == null) 
                 return Unauthorized();
             Guid.TryParse(userId, out var user_Id);
-            var result = await userService.AddOrUpdateAvt(user_Id, avatar);
+            var result = await userService.AddOrUpdateAvtAsync(user_Id, avatar);
             if (!result)
                 return BadRequest("Something went wrong !");
             return Ok("Avatar updated successfully!");

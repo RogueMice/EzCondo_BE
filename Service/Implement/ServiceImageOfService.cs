@@ -29,10 +29,10 @@ namespace EzConDo_Service.Implement
             //if (serviceImageDTO.serviceImages == null || serviceImageDTO.serviceImages.Count == 0)
             //    throw new BadRequestException("At least one image is required.");
 
-            bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == serviceImageDTO.service_Id);
+            bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == serviceImageDTO.Service_Id);
             if (!serviceExists)
                 throw new NotFoundException("Service not found");
-            var uploadTasks = serviceImageDTO.serviceImages.Select(async image =>
+            var uploadTasks = serviceImageDTO.ServiceImages.Select(async image =>
             {
                 try
                 {
@@ -40,7 +40,7 @@ namespace EzConDo_Service.Implement
                     return new ServiceImage
                     {
                         Id = Guid.NewGuid(),
-                        ServiceId = serviceImageDTO.service_Id,
+                        ServiceId = serviceImageDTO.Service_Id,
                         ImgPath = uploadResult
                     };
                 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,12 +21,14 @@ namespace EzConDo_Service.DTO
 
         public string PhoneNumber { get; set; } = null!;
 
-        public string email { get; set; } = null!;
+        public string Email { get; set; } = null!;
 
         public string Status { get; set; } = null!;
 
         public string RoleName { get; set; } = null!;
 
-        public string? avatar {  get; set; }
+        public string? Avatar {  get; set; }
+
+        public string No { get; set; } = null!;
     }
 }
