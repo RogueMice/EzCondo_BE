@@ -15,6 +15,7 @@ using EzConDo_Service.Implement;
 using EzConDo_Service.Cloudinary;
 using EzConDo_Service.CloudinaryIntegration;
 using Newtonsoft.Json;
+using EzCondo_API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -138,6 +139,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 
 app.Run();

@@ -11,5 +11,7 @@ namespace EzConDo_Service.Interface
     public interface ICitizenService
     {
         Task<Citizen> AddOrUpdateCitizenAsync(CitizenDTO citizenDTO);
+
+        Task<List<CitizenViewDTO>> GetAllCitizensAsync();
     }
 }

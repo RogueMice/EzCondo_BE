@@ -21,6 +21,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Service.Service
@@ -48,8 +49,8 @@ namespace Service.Service
                  .AsNoTracking()
                  .Include(u => u.Role)
                  .Include(u => u.Apartments)
-                 .SingleOrDefaultAsync(u => u.Email == dto.Email) 
-                 ?? throw new Exception("User not found");
+                 .SingleOrDefaultAsync(u => u.Email == dto.Email)
+                 ?? throw new NotFoundException("User is not found ! ");
 
             var result = passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password);
             if (result != PasswordVerificationResult.Success)
@@ -79,17 +80,31 @@ namespace Service.Service
         {
             var normalizedRoleName = userDTO.RoleName.Trim().ToUpperInvariant();
             var normalizedEmail = userDTO.Email.Trim().ToLowerInvariant();
+            var normalizedPhone = userDTO.PhoneNumber.Trim().ToLowerInvariant();
+            var normalizedApartmentNumber = userDTO.ApartmentNumber.Trim().ToLowerInvariant();
             //find role and check email
-            var roleAndEmailCheck = await dbContext.Roles
+            var roleEmailPhoneApartmentCheck = await dbContext.Roles
                                     .Where(r => r.Name.ToUpper() == normalizedRoleName)
-                                    .Select(r => new { RoleId = r.Id, EmailExists = dbContext.Users.Any(u => u.Email.ToLower() == normalizedEmail) })
+                                    .Select(r => new
+                                    {
+                                        RoleId = r.Id,
+                                        EmailExists = dbContext.Users.Any(u => u.Email.ToLower() == normalizedEmail),
+                                        PhoneExists = dbContext.Users.Any(u => u.PhoneNumber == userDTO.PhoneNumber),
+                                        ApartmentNumberExists = dbContext.Apartments.Any(a => a.ApartmentNumber == userDTO.ApartmentNumber)
+                                    })
                                     .FirstOrDefaultAsync();
 
-            if (roleAndEmailCheck == null)
-                throw new InvalidOperationException($"Role '{userDTO.RoleName}' invalid");
+            if (roleEmailPhoneApartmentCheck == null)
+                throw new NotFoundException($"Role '{userDTO.RoleName}' not found !");
 
-            if (roleAndEmailCheck.EmailExists)
-                throw new InvalidOperationException($"Email '{userDTO.Email}' existed");
+            if (roleEmailPhoneApartmentCheck.EmailExists)
+                throw new ConflictException($"Email '{userDTO.Email}' existed");
+
+            if (roleEmailPhoneApartmentCheck.PhoneExists)
+                throw new ConflictException($"Phone '{userDTO.PhoneNumber}' existed");
+
+            if (roleEmailPhoneApartmentCheck.ApartmentNumberExists)
+                throw new ConflictException($"Apartment number '{userDTO.ApartmentNumber}' existed");
 
             string randomPassword = GenerateRandomPassword();
             var passwordHash = passwordHasher.HashPassword(null, randomPassword);
@@ -104,7 +119,7 @@ namespace Service.Service
                 Password = passwordHash,
                 Status = "Active",
                 CreateAt = DateTime.UtcNow,
-                RoleId = roleAndEmailCheck.RoleId
+                RoleId = roleEmailPhoneApartmentCheck.RoleId
             };
             var apartment = new Apartment
             {
@@ -168,7 +183,13 @@ namespace Service.Service
 
         public async Task<Guid> UpdateUserAsync(UpdateUserDTO userDTO)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.id) ?? throw new Exception("User Id invalid !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userDTO.id) ?? throw new NotFoundException($"UserId {userDTO.id} not found !");
+
+            bool phoneExists = await dbContext.Users.AnyAsync(u => u.PhoneNumber == userDTO.phoneNumber && u.Id != userDTO.id);
+            if (phoneExists)
+            {
+                throw new ConflictException($"Phone number '{userDTO.phoneNumber}' is already in use!");
+            }
 
             user.FullName = userDTO.fullName;
             user.DateOfBirth = userDTO.dateOfBirth;
@@ -177,9 +198,17 @@ namespace Service.Service
             user.Status = userDTO.status;
             user.UpdateAt = DateTime.UtcNow;
 
+            bool apartmentNumberExists = await dbContext.Apartments.AnyAsync(
+                                                                        a => a.ApartmentNumber == userDTO.apartmentNumber
+                                                                        && a.UserId != userDTO.id);
+            if (apartmentNumberExists)
+            {
+                throw new ConflictException($"Apartment number '{userDTO.apartmentNumber}' is already in use!");
+            }
+
             var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.id);
 
-            if (apartment is not null)
+            if (apartment != null)
             {
                 apartment.ApartmentNumber = userDTO.apartmentNumber;
             }
@@ -203,7 +232,7 @@ namespace Service.Service
 
         public async Task<Guid> DeleteUserAsync(Guid userId)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new Exception("User Id invalid !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new NotFoundException($"UserId {userId} not found !");
 
             var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userId);
             if (apartment is not null)
@@ -224,7 +253,7 @@ namespace Service.Service
 
         public async Task ForgotPasswordAsync(string email)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new Exception("User Id invalid !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new NotFoundException($"Email {email} not found !"); ;
 
             // Create code 
             string code = _random.Next(100000, 999999).ToString();
@@ -233,7 +262,6 @@ namespace Service.Service
             var resetCode = await dbContext.PasswordResetCodes.FirstOrDefaultAsync(r => r.UserId == user.Id);
             if (resetCode == null)
             {
-                // Chưa có -> thêm mới
                 resetCode = new PasswordResetCode
                 {
                     UserId = user.Id,
@@ -244,7 +272,6 @@ namespace Service.Service
             }
             else
             {
-                // Đã có -> ghi đè code cũ
                 resetCode.Code = code;
                 resetCode.ExpireAt = expireAt;
             }
@@ -264,17 +291,15 @@ namespace Service.Service
 
         public async Task<string> GetPasswordAsync(ResetPasswordWithCodeDTO dto)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.Email) ?? throw new Exception("User invalid !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.Email) ?? throw new NotFoundException($"Email {dto.Email} not found !"); ;
 
             var resetCode = await dbContext.PasswordResetCodes
                                         .FirstOrDefaultAsync(r => r.UserId == user.Id
                                         && r.Code == dto.Code
                                         && r.ExpireAt > DateTime.UtcNow)
-                                        ?? throw new Exception("Confirmation code is not valid or expired!");
+                                        ?? throw new ConflictException("Confirmation code is not valid or expired!");
 
-            //Thay đổi pass và mã hóa mật khẩu
             user.Password = HashPassword(dto.NewPassword);
-            //Xóa code đã sử dụng trong db
             dbContext.PasswordResetCodes.Remove(resetCode);
 
             await dbContext.SaveChangesAsync();
@@ -284,8 +309,8 @@ namespace Service.Service
         public async Task<List<UserViewDTO>> GetUsersAsync(string? roleName, string? search)
         {
             var query = from u in dbContext.Users.AsNoTracking()
-                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId 
-                        into ua 
+                        join a in dbContext.Apartments.AsNoTracking() on u.Id equals a.UserId
+                        into ua
                         from a in ua.DefaultIfEmpty()
                         where (string.IsNullOrEmpty(roleName) || u.Role.Name == roleName)
                               && (string.IsNullOrEmpty(search) ||
@@ -333,23 +358,29 @@ namespace Service.Service
 
         public async Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO)
         {
-            var user = await dbContext.Users.FindAsync(userDTO.Id) ?? throw new Exception("User not found !");
+            var user = await dbContext.Users.FindAsync(userDTO.Id) ?? throw new NotFoundException($"UserId {userDTO.Id} not found !"); ;
+            bool phoneExists = await dbContext.Users.AnyAsync(u => u.PhoneNumber == userDTO.PhoneNumber && u.Id != userDTO.Id);
+            if (phoneExists)
+            {
+                throw new ConflictException($"Phone number '{userDTO.PhoneNumber}' is already in use!");
+            }
 
             user.FullName = userDTO.FullName;
             user.PhoneNumber = userDTO.PhoneNumber;
             user.Gender = userDTO.Gender;
+            user.UpdateAt = DateTime.UtcNow;
 
             dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
             return userDTO;
         }
 
-        public async Task<bool> AddOrUpdateAvt(Guid userId,IFormFile avt)
+        public async Task<bool> AddOrUpdateAvt(Guid userId, IFormFile avt)
         {
-            var user = await dbContext.Users.FindAsync(userId);
+            var user = await dbContext.Users.FindAsync(userId) ?? throw new NotFoundException($"UserId {userId} not found !"); ;
             if (user == null)
                 return false;
-            if(avt != null && avt.Length > 0)
+            if (avt != null && avt.Length > 0)
             {
                 if (!string.IsNullOrEmpty(user.Avatar))
                 {

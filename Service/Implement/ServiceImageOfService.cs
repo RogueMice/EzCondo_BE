@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -25,12 +26,12 @@ namespace EzConDo_Service.Implement
         }
         public async Task AddServiceImagesAsync(Service_ImageDTO serviceImageDTO)
         {
-            if (serviceImageDTO.serviceImages == null || serviceImageDTO.serviceImages.Count == 0)
-                throw new Exception("At least one image is required.");
+            //if (serviceImageDTO.serviceImages == null || serviceImageDTO.serviceImages.Count == 0)
+            //    throw new BadRequestException("At least one image is required.");
 
             bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == serviceImageDTO.service_Id);
             if (!serviceExists)
-                throw new Exception("Service not found");
+                throw new NotFoundException("Service not found");
             var uploadTasks = serviceImageDTO.serviceImages.Select(async image =>
             {
                 try
@@ -45,7 +46,7 @@ namespace EzConDo_Service.Implement
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception("Upload error !");
+                    throw new ConflictException("Upload error !");
                 }
             });
 

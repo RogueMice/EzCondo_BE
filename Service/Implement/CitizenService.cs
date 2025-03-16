@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -27,7 +28,13 @@ namespace EzConDo_Service.Implement
         {
             var user = await dbContext.Users.AsNoTracking()
                                   .FirstOrDefaultAsync(u => u.Id == citizenDTO.userId)
-                                  ?? throw new Exception("User invalid !");
+                                  ?? throw new NotFoundException($"UserId {citizenDTO.userId} is not found");
+            bool noExists = await dbContext.Citizens.AnyAsync(c => c.No == citizenDTO.no && c.UserId != citizenDTO.userId);
+            if (noExists)
+            {
+                throw new ConflictException($"NO: {citizenDTO.no} is already in use!");
+            }
+
             var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.userId);
             if (citizen is not null)
             {
@@ -59,6 +66,22 @@ namespace EzConDo_Service.Implement
 
             await dbContext.SaveChangesAsync();
             return citizen;
+        }
+
+        public async Task<List<CitizenViewDTO>> GetAllCitizensAsync()
+        {
+            var citizens = await dbContext.Citizens
+                                        .AsNoTracking()
+                                        .Select(c => new CitizenViewDTO
+                                        {
+                                            userId = c.UserId,
+                                            no = c.No,
+                                            dateOfExpiry = (DateOnly)c.DateOfExpiry,
+                                            dateOfIssue = c.DateOfIssue,
+                                            frontImage = c.FrontImage,
+                                            backImage = c.BackImage
+                                        }).ToListAsync();
+            return citizens;
         }
     }
 }

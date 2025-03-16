@@ -95,5 +95,14 @@ namespace EzCondo_API.Controllers
             await service_ImageService.AddServiceImagesAsync(serviceImageDTO);
             return Ok("Add service images is successful !");
         }
+
+        [HttpGet("get-all-citizens")]
+        public async Task<IActionResult> GetAllCitizens()
+        {
+            var citizen = await citizenService.GetAllCitizensAsync();
+            if (citizen != null)
+                return Ok(citizen);
+            return null; 
+        }
     }
 }
