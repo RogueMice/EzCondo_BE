@@ -11,7 +11,9 @@ public partial class Service
 
     public string Description { get; set; } = null!;
 
-    public decimal Cost { get; set; }
+    public decimal Price { get; set; }
+
+    public string BillingType { get; set; } = null!;
 
     public string Status { get; set; } = null!;
 

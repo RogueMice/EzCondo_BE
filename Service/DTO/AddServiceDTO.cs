@@ -9,17 +9,19 @@ namespace EzConDo_Service.DTO
 {
     public class AddServiceDTO
     {
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
 
         public string ServiceName { get; set; } = null!;
 
         public string Description { get; set; } = null!;
 
-        public decimal Cost { get; set; }
+        public decimal Price { get; set; }
 
-        public string? Status { get; set; } 
+        public string BillingType { get; set; } = null!;
 
-        public DateTime? CreatedAt { get; set; }
+        public string? Status { get; set; }
+
+        public DateTime CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
     }

@@ -9,6 +9,8 @@ public partial class User
 
     public string FullName { get; set; } = null!;
 
+    public DateOnly? DateOfBirth { get; set; }
+
     public string Gender { get; set; } = null!;
 
     public string Email { get; set; } = null!;
@@ -26,8 +28,6 @@ public partial class User
     public string? Avatar { get; set; }
 
     public int RoleId { get; set; }
-
-    public DateTime? DateOfBirth { get; set; }
 
     public virtual ICollection<Apartment> Apartments { get; set; } = new List<Apartment>();
 

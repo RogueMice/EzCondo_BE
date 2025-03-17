@@ -13,7 +13,7 @@ namespace EzConDo_Service.DTO
 
         public string FullName { get; set; } = null!;
 
-        public DateTime? DateOfBirth { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
 
         public string Gender { get; set; } = null!;
 
