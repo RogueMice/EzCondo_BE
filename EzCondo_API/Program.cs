@@ -1,4 +1,3 @@
-using EzCondo_Data.Domain;
 using EzCondo_Data.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -112,6 +111,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICitizenService, CitizenService>();
 builder.Services.AddScoped<IService_service,ServiceOfSerivce>();
 builder.Services.AddScoped<IService_ImageService, ServiceImageOfService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
 //Add cloud service
@@ -129,7 +129,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

@@ -8,10 +8,8 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.Interface
 {
-    public interface ICitizenService
+    public interface INotificationService
     {
-        Task<Citizen> AddOrUpdateCitizenAsync(CitizenDTO citizenDTO);
-
-        Task<List<CitizenViewDTO>> GetAllCitizensAsync();
+        Task<string?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId);
     }
 }

@@ -1,8 +1,8 @@
 ﻿using EzCondo_Data.Context;
-using EzCondo_Data.Domain;
 using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -38,10 +38,24 @@ namespace EzConDo_Service.Implement
             var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == citizenDTO.UserId);
             if (citizen is not null)
             {
+                //update
                 citizen.No = citizenDTO.No;
                 citizen.DateOfIssue = citizenDTO.DateOfIssue;
                 citizen.DateOfExpiry = citizenDTO.DateOfExpiry;
+
+                //Delete and upload image
+                Task<string?> frontTask = citizenDTO.FrontImage != null
+                    ? ProcessImageAsync(citizen.FrontImage, citizenDTO.FrontImage)
+                    : Task.FromResult(citizen.FrontImage);
+                Task<string?> backTask = citizenDTO.BackImage != null
+                    ? ProcessImageAsync(citizen.BackImage, citizenDTO.BackImage)
+                    : Task.FromResult(citizen.BackImage);
+
+                await Task.WhenAll(frontTask, backTask);
+                citizen.FrontImage = frontTask.Result;
+                citizen.BackImage = backTask.Result;
             }
+            //add new Citizen
             else
             {
                 // Upload image on the Cloudinary if have
@@ -82,6 +96,15 @@ namespace EzConDo_Service.Implement
                                             BackImage = c.BackImage
                                         }).ToListAsync();
             return citizens;
+        }
+
+        private async Task<string?> ProcessImageAsync(string? currentImage, IFormFile newImage)
+        {
+            if (!string.IsNullOrWhiteSpace(currentImage))
+            {
+                await cloudinaryService.DeleteImageAsync(currentImage);
+            }
+            return await cloudinaryService.UploadImageAsync(newImage);
         }
     }
 }

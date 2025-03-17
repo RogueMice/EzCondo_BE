@@ -1,5 +1,4 @@
-﻿using EzCondo_Data.Domain;
-using EzConDo_Service.DTO;
+﻿using EzConDo_Service.DTO;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;

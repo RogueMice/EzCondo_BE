@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Service.IService;
+using System.Security.Claims;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EzCondo_API.Controllers
@@ -20,18 +21,21 @@ namespace EzCondo_API.Controllers
         private readonly ApartmentDbContext dbContext;
         private readonly IService_service service_service;
         private readonly IService_ImageService service_ImageService;
+        private readonly INotificationService notificationService;
 
         public AdminController(IUserService userService, 
                                 ICitizenService citizenService, 
                                 ApartmentDbContext dbContext, 
                                 IService_service service_Service,
-                                IService_ImageService service_ImageService)
+                                IService_ImageService service_ImageService,
+                                INotificationService notificationService)
         {
             this.userService = userService;
             this.citizenService = citizenService;
             this.dbContext = dbContext;
             this.service_service = service_Service;
             this.service_ImageService = service_ImageService;
+            this.notificationService = notificationService;
         }
 
         [HttpGet("get-all-users")]
@@ -112,6 +116,20 @@ namespace EzCondo_API.Controllers
             if (users == null)
                 return BadRequest("Don't have any user !");
             return Ok(users);
+        }
+
+        [HttpPost("create-notification")]
+        public async Task<IActionResult> CreateNotification(CreateNotificationDTO createNotificationDTO)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+
+            var notification = await notificationService.CreateNotificationAsync(createNotificationDTO,user_Id);
+            if (notification == null)
+                return BadRequest("Create Notification failure");
+            return Ok(notification);
         }
     }
 }

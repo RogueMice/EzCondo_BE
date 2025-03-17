@@ -1,5 +1,4 @@
-﻿using EzCondo_Data.Domain;
-using EzConDo_Service.DTO;
+﻿using EzConDo_Service.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

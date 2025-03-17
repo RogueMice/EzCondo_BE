@@ -1,5 +1,4 @@
 ﻿using EzCondo_Data.Context;
-using EzCondo_Data.Domain;
 using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
@@ -18,7 +17,7 @@ namespace EzConDo_Service.Implement
         }
         public async Task<Guid> AddServiceAsync(AddServiceDTO serviceDTO)
         {
-            var service = new EzCondo_Data.Domain.Service
+            var service = new EzCondo_Data.Context.Service
             {
                 Id = Guid.NewGuid(),
                 ServiceName = serviceDTO.ServiceName,

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EzCondo_Data.Domain;
+namespace EzCondo_Data.Context;
 
 public partial class User
 {
@@ -39,9 +39,9 @@ public partial class User
 
     public virtual ICollection<Incident> Incidents { get; set; } = new List<Incident>();
 
-    public virtual ICollection<Notification> NotificationRecivers { get; set; } = new List<Notification>();
+    public virtual ICollection<NotificationReceiver> NotificationReceivers { get; set; } = new List<NotificationReceiver>();
 
-    public virtual ICollection<Notification> NotificationSenders { get; set; } = new List<Notification>();
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<ParkingLot> ParkingLots { get; set; } = new List<ParkingLot>();
 
