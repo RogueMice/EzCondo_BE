@@ -37,7 +37,7 @@ namespace EzConDo_Service.CloudinaryIntegration
                 var uploadParams = new ImageUploadParams()
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Transformation = new Transformation().Width(500).Height(500).Crop("fill"),
+                    Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
                     Folder = "EzCondo_Cloud"
                 };
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams, cancellationToken);

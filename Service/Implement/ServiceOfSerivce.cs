@@ -22,8 +22,10 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 ServiceName = serviceDTO.ServiceName,
                 Description = serviceDTO.Description,
-                BillingType = serviceDTO.BillingType.ToLower(),
-                Price = serviceDTO.Price,
+                TypeOfMonth = serviceDTO.TypeOfMonth,
+                TypeOfYear = serviceDTO.TypeOfYear,
+                PriceOfMonth = serviceDTO.PriceOfMonth,
+                PriceOfYear = serviceDTO.PriceOfYear,
                 Status = "active",
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = null

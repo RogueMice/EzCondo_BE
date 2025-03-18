@@ -15,13 +15,17 @@ namespace EzConDo_Service.DTO
 
         public string Description { get; set; } = null!;
 
-        public decimal Price { get; set; }
+        public bool? TypeOfMonth { get; set; }
 
-        public string BillingType { get; set; } = null!;
+        public bool? TypeOfYear { get; set; }
+
+        public decimal? PriceOfMonth { get; set; }
+
+        public decimal? PriceOfYear { get; set; }
 
         public string? Status { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
     }

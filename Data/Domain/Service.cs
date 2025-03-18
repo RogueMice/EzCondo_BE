@@ -11,9 +11,13 @@ public partial class Service
 
     public string Description { get; set; } = null!;
 
-    public decimal Price { get; set; }
+    public bool? TypeOfMonth { get; set; }
 
-    public string BillingType { get; set; } = null!;
+    public bool? TypeOfYear { get; set; }
+
+    public decimal? PriceOfMonth { get; set; }
+
+    public decimal? PriceOfYear { get; set; }
 
     public string Status { get; set; } = null!;
 

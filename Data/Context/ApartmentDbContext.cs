@@ -59,19 +59,19 @@ public partial class ApartmentDbContext : DbContext
 
     public virtual DbSet<WaterReading> WaterReadings { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Data Source=ROGUE_MICE\\SQLEXPRESS;Initial Catalog=Apartment_db;Integrated Security=True;Trust Server Certificate=True");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=ROGUE_MICE\\SQLEXPRESS;Initial Catalog=Apartment_db;Integrated Security=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Apartment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Apartmen__3213E83F819F827E");
+            entity.HasKey(e => e.Id).HasName("PK__Apartmen__3213E83F77B5D6A6");
 
             entity.ToTable("Apartment");
 
-            entity.HasIndex(e => e.ApartmentNumber, "UQ__Apartmen__2FFA3D27CDC43E11").IsUnique();
+            entity.HasIndex(e => e.ApartmentNumber, "UQ__Apartmen__2FFA3D2795CC3CC0").IsUnique();
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -94,7 +94,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Booking__3213E83F47A7A566");
+            entity.HasKey(e => e.Id).HasName("PK__Booking__3213E83F502E4107");
 
             entity.ToTable("Booking");
 
@@ -131,7 +131,7 @@ public partial class ApartmentDbContext : DbContext
 
             entity.ToTable("Citizen");
 
-            entity.HasIndex(e => e.No, "UQ__Citizen__3213D0812D750D3B").IsUnique();
+            entity.HasIndex(e => e.No, "UQ__Citizen__3213D0812F45D660").IsUnique();
 
             entity.Property(e => e.UserId)
                 .ValueGeneratedNever()
@@ -156,7 +156,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<ElectricBill>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83F81737708");
+            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83FF29BFFBA");
 
             entity.ToTable("Electric_bill");
 
@@ -192,7 +192,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<ElectricMeter>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83F6594E965");
+            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83F7A0BB12E");
 
             entity.ToTable("Electric_meters");
 
@@ -213,7 +213,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<ElectricReading>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83F85013049");
+            entity.HasKey(e => e.Id).HasName("PK__Electric__3213E83FE48B17C3");
 
             entity.ToTable("Electric_reading");
 
@@ -242,7 +242,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Incident>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Incident__3213E83F8BCDA93C");
+            entity.HasKey(e => e.Id).HasName("PK__Incident__3213E83FC95449D7");
 
             entity.ToTable("Incident");
 
@@ -275,7 +275,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<IncidentDetail>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Incident__3213E83F6074C668");
+            entity.HasKey(e => e.Id).HasName("PK__Incident__3213E83F5A7A3373");
 
             entity.ToTable("Incident_detail");
 
@@ -298,7 +298,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Notifica__3213E83F136AB52B");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__3213E83F0D3A0C15");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("(newid())")
@@ -323,7 +323,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<NotificationReceiver>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Notifica__3213E83FB0DC526D");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__3213E83F9B1AC2A8");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -343,16 +343,16 @@ public partial class ApartmentDbContext : DbContext
             entity.HasOne(d => d.Notification).WithMany(p => p.NotificationReceivers)
                 .HasForeignKey(d => d.NotificationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Notificat__notif__151B244E");
+                .HasConstraintName("FK__Notificat__notif__17036CC0");
 
             entity.HasOne(d => d.User).WithMany(p => p.NotificationReceivers)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__Notificat__user___160F4887");
+                .HasConstraintName("FK__Notificat__user___17F790F9");
         });
 
         modelBuilder.Entity<ParkingLot>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Parking___3213E83F84A4B613");
+            entity.HasKey(e => e.Id).HasName("PK__Parking___3213E83F2E1C5B1B");
 
             entity.ToTable("Parking_lot");
 
@@ -377,7 +377,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<PasswordResetCode>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Password__1788CC4CB18764CE");
+            entity.HasKey(e => e.UserId).HasName("PK__Password__1788CC4C41AA2FF0");
 
             entity.Property(e => e.UserId).ValueGeneratedNever();
             entity.Property(e => e.Code).HasMaxLength(50);
@@ -391,7 +391,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Payment__3213E83FF633EE12");
+            entity.HasKey(e => e.Id).HasName("PK__Payment__3213E83F66CB29AA");
 
             entity.ToTable("Payment");
 
@@ -440,7 +440,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<PriceElectricTier>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Price_el__3213E83F3E8BAEEF");
+            entity.HasKey(e => e.Id).HasName("PK__Price_el__3213E83F9EE0A1AE");
 
             entity.ToTable("Price_electric_tiers");
 
@@ -460,7 +460,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3213E83F394E6F50");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3213E83F2D15F7BF");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
@@ -470,23 +470,23 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<Service>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Service__3213E83F9FCD0D3D");
+            entity.HasKey(e => e.Id).HasName("PK__Service__3213E83F552EB752");
 
             entity.ToTable("Service");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
-            entity.Property(e => e.BillingType)
-                .HasMaxLength(10)
-                .HasColumnName("billing_type");
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.Price)
+            entity.Property(e => e.PriceOfMonth)
                 .HasColumnType("decimal(10, 2)")
-                .HasColumnName("price");
+                .HasColumnName("priceOfMonth");
+            entity.Property(e => e.PriceOfYear)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("priceOfYear");
             entity.Property(e => e.ServiceName)
                 .HasMaxLength(100)
                 .HasColumnName("service_name");
@@ -494,6 +494,12 @@ public partial class ApartmentDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("status");
+            entity.Property(e => e.TypeOfMonth)
+                .HasDefaultValue(false)
+                .HasColumnName("typeOfMonth");
+            entity.Property(e => e.TypeOfYear)
+                .HasDefaultValue(false)
+                .HasColumnName("typeOfYear");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
@@ -501,7 +507,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<ServiceImage>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Service___3213E83FF4F8BA29");
+            entity.HasKey(e => e.Id).HasName("PK__Service___3213E83F486F5B23");
 
             entity.ToTable("Service_Image");
 
@@ -521,11 +527,11 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83FD437C265");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3213E83FAED55E91");
 
-            entity.HasIndex(e => e.PhoneNumber, "UQ__Users__A1936A6B7820F102").IsUnique();
+            entity.HasIndex(e => e.PhoneNumber, "UQ__Users__A1936A6BFF66211E").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__AB6E6164992565BC").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__AB6E61641FB776DE").IsUnique();
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -568,7 +574,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<UserDevice>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__user_dev__3213E83FD3265D31");
+            entity.HasKey(e => e.Id).HasName("PK__user_dev__3213E83F2E6AB943");
 
             entity.ToTable("user_device");
 
@@ -592,7 +598,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<WaterBill>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Water_bi__3213E83FBCECFBD8");
+            entity.HasKey(e => e.Id).HasName("PK__Water_bi__3213E83FB7F51EC7");
 
             entity.ToTable("Water_bill");
 
@@ -631,7 +637,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<WaterMeter>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Water_me__3213E83FD084C07D");
+            entity.HasKey(e => e.Id).HasName("PK__Water_me__3213E83FBC1E855E");
 
             entity.ToTable("Water_meters");
 
@@ -652,7 +658,7 @@ public partial class ApartmentDbContext : DbContext
 
         modelBuilder.Entity<WaterReading>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Water_re__3213E83F9B55F4FF");
+            entity.HasKey(e => e.Id).HasName("PK__Water_re__3213E83F5DB21A32");
 
             entity.ToTable("Water_reading");
 
