@@ -4,6 +4,7 @@ using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -15,25 +16,79 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
-        public async Task<Guid> AddServiceAsync(AddServiceDTO serviceDTO)
-        {
-            var service = new EzCondo_Data.Context.Service
-            {
-                Id = Guid.NewGuid(),
-                ServiceName = serviceDTO.ServiceName,
-                Description = serviceDTO.Description,
-                TypeOfMonth = serviceDTO.TypeOfMonth,
-                TypeOfYear = serviceDTO.TypeOfYear,
-                PriceOfMonth = serviceDTO.PriceOfMonth,
-                PriceOfYear = serviceDTO.PriceOfYear,
-                Status = "active",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = null
-            };
-            dbContext.Services.Add(service);
-            await dbContext.SaveChangesAsync();
 
-            return service.Id;
+        public async Task<Guid> AddOrUpdateServiceAsync(AddServiceDTO serviceDTO)
+        {
+            var service = await dbContext.Services.FirstOrDefaultAsync(x => x.Id == serviceDTO.Id) ?? new EzCondo_Data.Context.Service();
+            //add new
+            if (service.Id == Guid.Empty)
+            {
+                service.Id = Guid.NewGuid();
+                service.ServiceName = serviceDTO.ServiceName;
+                service.Description = serviceDTO.Description;
+                service.TypeOfMonth = serviceDTO.TypeOfMonth;
+                service.TypeOfYear = serviceDTO.TypeOfYear;
+                service.PriceOfMonth = serviceDTO.PriceOfMonth;
+                service.PriceOfYear = serviceDTO.PriceOfYear;
+                service.Status = serviceDTO.Status ?? "active";
+                service.CreatedAt = DateTime.UtcNow;
+                service.UpdatedAt = null;
+                dbContext.Services.Add(service);
+                await dbContext.SaveChangesAsync();
+                return service.Id;
+            }
+
+            //update
+            service.ServiceName = serviceDTO.ServiceName;
+            service.Description = serviceDTO.Description;
+            service.TypeOfMonth = serviceDTO.TypeOfMonth;
+            service.TypeOfYear = serviceDTO.TypeOfYear;
+            service.PriceOfMonth = serviceDTO.PriceOfMonth;
+            service.PriceOfYear = serviceDTO.PriceOfYear;
+            service.Status = serviceDTO.Status.ToLower() ?? service.Status;
+            service.UpdatedAt = DateTime.UtcNow;
+
+            dbContext.Services.Update(service);
+            await dbContext.SaveChangesAsync();
+            return serviceDTO.Id;
+        }
+
+
+        public async Task<ServiceViewDTO> GetServiceByIdAsync(Guid serviceId)
+        {
+            var service = await dbContext.Services.AsNoTracking().FirstOrDefaultAsync(x => x.Id == serviceId) ?? throw new NotFoundException("ServiceId is not correct !!");
+            var serviceView = new ServiceViewDTO
+            {
+                Id = service.Id,
+                ServiceName = service.ServiceName,
+                Description = service.Description,
+                TypeOfMonth = service.TypeOfMonth,
+                TypeOfYear = service.TypeOfYear,
+                PriceOfMonth = service.PriceOfMonth,
+                PriceOfYear = service.PriceOfYear,
+                Status = service.Status,
+                CreatedAt = service.CreatedAt,
+                UpdatedAt = service.UpdatedAt
+            };
+            return serviceView;
+        }
+
+        public Task<List<ServiceViewDTO>> GetAllServicesAsync()
+        {
+            var services = dbContext.Services.Select(x => new ServiceViewDTO
+            {
+                Id = x.Id,
+                ServiceName = x.ServiceName,
+                Description = x.Description,
+                TypeOfMonth = x.TypeOfMonth,
+                TypeOfYear = x.TypeOfYear,
+                PriceOfMonth = x.PriceOfMonth,
+                PriceOfYear = x.PriceOfYear,
+                Status = x.Status,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt
+            }).AsNoTracking().ToListAsync();
+            return services;
         }
     }
 }

@@ -2,6 +2,7 @@
 using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -23,14 +24,33 @@ namespace EzConDo_Service.Implement
             this.dbContext = dbContext;
             this.cloudinaryService = cloudinaryService;
         }
-        public async Task AddServiceImagesAsync(Service_ImageDTO serviceImageDTO)
+        public async Task<string?> AddOrUpdateServiceImagesAsync(Service_ImageDTO serviceImageDTO)
         {
-            //if (serviceImageDTO.serviceImages == null || serviceImageDTO.serviceImages.Count == 0)
-            //    throw new BadRequestException("At least one image is required.");
-
             bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == serviceImageDTO.Service_Id);
             if (!serviceExists)
                 throw new NotFoundException("Service not found");
+
+            var currentImages = await dbContext.ServiceImages.Where(s => s.ServiceId == serviceImageDTO.Service_Id).ToListAsync();
+            if(currentImages.Any())
+            {
+                //delete images in the cloud => Nếu đã có ảnh thì xóa ảnh cũ trên cloud
+                var deleteTask = currentImages.Select(async image =>
+                {
+                    try
+                    {
+                        await cloudinaryService.DeleteImageAsync(image.ImgPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new ConflictException("Error deleting image from cloud.");
+                    }
+                });
+
+                //delete images in database => Xóa ảnh cũ trong database
+                dbContext.ServiceImages.RemoveRange(currentImages);
+            }
+
+            //upload new images 
             var uploadTasks = serviceImageDTO.ServiceImages.Select(async image =>
             {
                 try
@@ -54,9 +74,26 @@ namespace EzConDo_Service.Implement
             if (imageList.Any())
             {
                 await dbContext.ServiceImages.AddRangeAsync(imageList);
-                await dbContext.SaveChangesAsync();
             }
-            return;
+
+            await dbContext.SaveChangesAsync();
+            return "Upload image is successful !";
+        }
+
+        public async Task<List<ServiceImageViewDTO>> GetServiceImagesAsync(Guid serviceId)
+        {
+            var serviceImages = await dbContext.ServiceImages
+                .Where(s => s.ServiceId == serviceId)
+                .Select(s => new ServiceImageViewDTO
+                {
+                    Id = s.Id,
+                    ServiceId = s.ServiceId,
+                    ImgPath = s.ImgPath
+                })
+                .AsNoTracking()
+                .ToListAsync();
+
+            return serviceImages;
         }
     }
 }

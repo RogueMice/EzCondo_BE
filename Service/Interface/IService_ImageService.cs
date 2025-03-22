@@ -9,6 +9,9 @@ namespace EzConDo_Service.Interface
 {
     public interface IService_ImageService
     {
-        Task AddServiceImagesAsync(Service_ImageDTO serviceImageDTO);
+        Task<string?> AddOrUpdateServiceImagesAsync(Service_ImageDTO serviceImageDTO);
+
+        Task<List<ServiceImageViewDTO>> GetServiceImagesAsync(Guid serviceId);
+
     }
 }

@@ -9,6 +9,10 @@ namespace EzConDo_Service.Interface
 {
     public interface IService_service
     {
-        Task<Guid> AddServiceAsync(AddServiceDTO serviceDTO);
+        Task<Guid> AddOrUpdateServiceAsync(AddServiceDTO serviceDTO);
+
+        Task<List<ServiceViewDTO>> GetAllServicesAsync();
+
+        Task<ServiceViewDTO> GetServiceByIdAsync(Guid serviceId);
     }
 }

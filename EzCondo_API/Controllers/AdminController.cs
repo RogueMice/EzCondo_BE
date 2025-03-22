@@ -51,7 +51,7 @@ namespace EzCondo_API.Controllers
         public async Task<IActionResult> AddUser([FromBody] AddUserDTO userDTO)
         {
             var user = await userService.AddUserAsync(userDTO);
-            if (user == null)
+            if (user == Guid.Empty)
                 return BadRequest("Add User is failure !");
             return Ok(user);
         }
@@ -70,7 +70,7 @@ namespace EzCondo_API.Controllers
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDTO userDTO)
         {
             var user = await userService.UpdateUserAsync(userDTO);
-            if (user == null)
+            if (user == Guid.Empty)
                 return BadRequest("Update User is failure !");
             return Ok(user);
         }
@@ -79,25 +79,25 @@ namespace EzCondo_API.Controllers
         public async Task<IActionResult> DeleteUserById(Guid userId)
         {
             var user = await userService.DeleteUserAsync(userId);
-            if (user == null)
+            if (user == Guid.Empty)
                 return BadRequest("Delete User is failure !");
             return Ok(user);
         }
 
-        [HttpPost("add-service")]
+        [HttpPost("add-or-update-service")]
         public async Task<IActionResult> AddService([FromBody] AddServiceDTO serviceDTO)
         {
-            var service = await service_service.AddServiceAsync(serviceDTO);
-            if (service == null)
+            var service = await service_service.AddOrUpdateServiceAsync(serviceDTO);
+            if (service == Guid.Empty)
                 return BadRequest("Add service is failure !");
             return Ok(service);
         }
 
-        [HttpPost("add-service-images")]
-        public async Task<IActionResult> AddServiceImages([FromForm] Service_ImageDTO serviceImageDTO)
+        [HttpPost("add-or-update-service-images")]
+        public async Task<IActionResult> AddOrUpdateServiceImages([FromForm] Service_ImageDTO serviceImageDTO)
         {
-            await service_ImageService.AddServiceImagesAsync(serviceImageDTO);
-            return Ok("Add service images is successful !");
+            await service_ImageService.AddOrUpdateServiceImagesAsync(serviceImageDTO);
+            return Ok("AddOrUpdate service images is successful !");
         }
 
         [HttpGet("get-all-citizens")]

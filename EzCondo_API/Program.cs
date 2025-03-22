@@ -102,6 +102,15 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy =>
         policy.RequireClaim(ClaimTypes.Role.ToString().ToLower(), "admin"));
+    options.AddPolicy("Manager", policy =>
+        policy.RequireClaim(ClaimTypes.Role.ToString().ToLower(), "manager"));
+    options.AddPolicy("AdminOrManager", policy =>
+    {
+        policy.RequireAssertion(context =>
+            context.User.HasClaim(c =>
+                c.Type.ToLower() == ClaimTypes.Role.ToLower() &&
+                (c.Value.ToLower() == "admin" || c.Value.ToLower() == "manager")));
+    });
 });
 
 //Configure Connection String
