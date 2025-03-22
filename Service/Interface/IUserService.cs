@@ -31,5 +31,6 @@ namespace Service.IService
 
         Task <GetUserByIdDTO?> GetUserByIdDTOAsync(Guid userId);
 
+        Task <string?>ChangePasswordAsync(ChangePasswordDTO dto);
     }
 }

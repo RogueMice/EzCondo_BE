@@ -55,14 +55,19 @@ namespace EzCondo_API.Controllers
             return Ok("Avatar updated successfully!");
         }
 
+
+        [HttpPatch("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO dto)
+        {
+            dto.UserId = Guid.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid"));
+            var user = await userService.ChangePasswordAsync(dto);
+            return Ok(user);
+        }
+
         [HttpPost("update-fcm-token")]
         public async Task<IActionResult> UpdateFcmToken([FromBody] UpdateFcmTokenDTO dto)
         {
-            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-                return Unauthorized();
-            Guid.TryParse(userId, out var user_Id);
-            dto.UserId = user_Id;
+            dto.UserId = Guid.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid"));
             var result = await userDeviceService.UpdateFcmToken(dto);
             if (result == null)
                 return BadRequest("Something went wrong !");

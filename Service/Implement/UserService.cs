@@ -339,7 +339,7 @@ namespace Service.Service
                         into ua
                         from a in ua.DefaultIfEmpty()
                         join c in dbContext.Citizens.AsNoTracking() on u.Id equals c.UserId
-                        into uc 
+                        into uc
                         from c in uc.DefaultIfEmpty()
                         where userId == u.Id
                         select new CurrentUserDTO
@@ -423,6 +423,20 @@ namespace Service.Service
                             BackImage = c != null ? c.BackImage : string.Empty
                         };
             return await query.FirstOrDefaultAsync();
+        }
+
+        public async Task<string?> ChangePasswordAsync(ChangePasswordDTO dto)
+        {
+            var user = await dbContext.Users.FindAsync(dto.UserId) ?? throw new NotFoundException($"UserId {dto.UserId} not found !");
+            var passwordCurrent = passwordHasher.VerifyHashedPassword(user, user.Password, dto.OldPassword);
+            if (passwordCurrent != PasswordVerificationResult.Success)
+                throw new ConflictException("Old password is incorrect !");
+
+            //success and change_password
+            user.Password = HashPassword(dto.NewPassword);
+            dbContext.Users.Update(user);
+            await dbContext.SaveChangesAsync();
+            return "Change password successfully!";
         }
     }
 }
