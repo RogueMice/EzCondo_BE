@@ -1,4 +1,4 @@
-using EzCondo_Data.Context;
+﻿using EzCondo_Data.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,9 @@ using EzConDo_Service.Cloudinary;
 using EzConDo_Service.CloudinaryIntegration;
 using Newtonsoft.Json;
 using EzCondo_API.Middleware;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using EzConDo_Service.FirebaseIntegration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,13 +115,26 @@ builder.Services.AddScoped<ICitizenService, CitizenService>();
 builder.Services.AddScoped<IService_service,ServiceOfSerivce>();
 builder.Services.AddScoped<IService_ImageService, ServiceImageOfService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
+builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
+builder.Services.AddScoped<IFirebasePushNotificationService, FirebasePushNotificationService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
-
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection("CloudinarySettings"));
+
+
+// Add MemoryCache
+//builder.Services.AddMemoryCache();
+
+//Add SignalR
+builder.Services.AddSignalR();
+
+// Create Firebase
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile("D:\\Capstone2\\Firebase(Key)\\ezcondo-73fc4-firebase-adminsdk-fbsvc-e80056737f.json")
+});
 
 var app = builder.Build();
 
@@ -129,7 +145,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

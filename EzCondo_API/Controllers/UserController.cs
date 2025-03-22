@@ -1,7 +1,10 @@
-﻿using EzConDo_Service.DTO;
+﻿using EzCondo_Data.Context;
+using EzConDo_Service.DTO;
+using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Service.IService;
 using System.Security.Claims;
 
@@ -13,10 +16,12 @@ namespace EzCondo_API.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService userService;
+        private readonly IUserDeviceService userDeviceService;
 
-        public UserController(IUserService userService)
+        public UserController(IUserService userService, IUserDeviceService userDeviceService)
         {
             this.userService = userService;
+            this.userDeviceService = userDeviceService;
         }
 
         [HttpGet("get-infor-me")]
@@ -48,6 +53,20 @@ namespace EzCondo_API.Controllers
             if (!result)
                 return BadRequest("Something went wrong !");
             return Ok("Avatar updated successfully!");
+        }
+
+        [HttpPost("update-fcm-token")]
+        public async Task<IActionResult> UpdateFcmToken([FromBody] UpdateFcmTokenDTO dto)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            dto.UserId = user_Id;
+            var result = await userDeviceService.UpdateFcmToken(dto);
+            if (result == null)
+                return BadRequest("Something went wrong !");
+            return Ok(result);
         }
     }
 }
