@@ -18,26 +18,35 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
-        public async Task<string?> UpdateFcmToken(UpdateFcmTokenDTO dto)
+        public async Task<string?> AddOrUpdateFcmToken(UpdateFcmTokenDTO dto)
         {
             var userDevice = await dbContext.UserDevices.FirstOrDefaultAsync(ud => ud.UserId == dto.UserId && ud.Type == dto.Type);
 
             if (userDevice == null)
             {
+                if (dto.UserId == null)
+                {
+                    throw new ArgumentNullException(nameof(dto.UserId), "UserId cannot be null.");
+                }
+
                 userDevice = new UserDevice
                 {
-                    Id = Guid.NewGuid(),
-                    Type = dto.Type,
                     FcmToken = dto.FcmToken,
-                    IsActive = true,
+                    Type = dto.Type,
+                    IsActive = dto.IsActive ?? true,
                     UserId = (Guid)dto.UserId
                 };
                 dbContext.UserDevices.Add(userDevice);
             }
             else
             {
+                if (dto.IsActive == null)
+                {
+                    throw new ArgumentNullException(nameof(dto.IsActive), "IsActive cannot be null.");
+                }
+
                 userDevice.FcmToken = dto.FcmToken;
-                userDevice.IsActive = true;
+                userDevice.IsActive = (bool)dto.IsActive;
             }
 
             await dbContext.SaveChangesAsync();

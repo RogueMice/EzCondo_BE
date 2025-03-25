@@ -1,7 +1,9 @@
-﻿using System;
+﻿using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
+using System;
 using System.Collections.Generic;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Temp;
 
 public partial class User
 {

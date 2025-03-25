@@ -10,6 +10,6 @@ namespace EzConDo_Service.Interface
 {
     public interface IUserDeviceService
     {
-        Task<string?> UpdateFcmToken(UpdateFcmTokenDTO dto);
+        Task<string?> AddOrUpdateFcmToken(UpdateFcmTokenDTO dto);
     }
 }
