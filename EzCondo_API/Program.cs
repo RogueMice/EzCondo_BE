@@ -126,6 +126,9 @@ builder.Services.AddScoped<IService_ImageService, ServiceImageOfService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
 builder.Services.AddScoped<IFirebasePushNotificationService, FirebasePushNotificationService>();
+builder.Services.AddScoped<IPrice_electric_service, PriceElectricTierService>();
+builder.Services.AddScoped<IPriceWaterTierService, PriceWaterTierService>();
+builder.Services.AddScoped<IPriceParkingLotService, PriceParkingLotService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();

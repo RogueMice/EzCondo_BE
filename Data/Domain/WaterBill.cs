@@ -11,8 +11,6 @@ public partial class WaterBill
 
     public Guid ReadingId { get; set; }
 
-    public decimal PricePerM3 { get; set; }
-
     public decimal TotalConsumption { get; set; }
 
     public decimal TotalAmount { get; set; }
