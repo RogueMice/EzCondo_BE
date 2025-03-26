@@ -465,10 +465,5 @@ namespace Service.Service
             await dbContext.SaveChangesAsync();
             return "Change password successfully!";
         }
-
-        public Task SendOTPAsync(string email)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

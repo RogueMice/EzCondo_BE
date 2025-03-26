@@ -79,9 +79,37 @@ namespace EzConDo_Service.Implement
             return id;
         }
 
-        public Task<HouseHoldMemberDTO> GetAsync(Guid user_id)
+        public async Task<MyHouseHoldResponseDTO> GetMyHoldHouseMemberAsync(Guid user_id)
         {
-            throw new NotImplementedException();
+            var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == user_id) ?? throw new NotFoundException($"User id: {user_id} not found !");
+
+            var houseHoldMembers = await dbContext.HouseHoldMembers
+                                   .AsNoTracking()
+                                   .Where(x => x.UserId == user_id)
+                                   .Select(x => new MyHouseHoldMemberDTO
+                                   {
+                                       Id = x.Id,
+                                       No = x.No,
+                                       FullName = x.FullName,
+                                       DateOfBirth = x.DateOfBirth,
+                                       Gender = x.Gender,
+                                       PhoneNumber = x.PhoneNumber,
+                                       Relationship = x.Relationship
+                                   }).ToListAsync();
+            return new MyHouseHoldResponseDTO
+            {
+                User = new UserDTO
+                {
+                    Id = user.Id,
+                    Regency = "Householder",
+                    FullName = user.FullName,
+                    DateOfBirth = user.DateOfBirth,
+                    Gender = user.Gender,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber
+                },
+                Members = houseHoldMembers
+            };
         }
     }
 }

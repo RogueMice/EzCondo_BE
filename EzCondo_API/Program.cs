@@ -104,6 +104,8 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim(ClaimTypes.Role.ToString().ToLower(), "admin"));
     options.AddPolicy("Manager", policy =>
         policy.RequireClaim(ClaimTypes.Role.ToString().ToLower(), "manager"));
+    options.AddPolicy("Resident", policy =>
+        policy.RequireClaim(ClaimTypes.Role.ToString().ToLower(), "resident"));
     options.AddPolicy("AdminOrManager", policy =>
     {
         policy.RequireAssertion(context =>
@@ -130,6 +132,7 @@ builder.Services.AddScoped<IPrice_electric_service, PriceElectricTierService>();
 builder.Services.AddScoped<IPriceWaterTierService, PriceWaterTierService>();
 builder.Services.AddScoped<IPriceParkingLotService, PriceParkingLotService>();
 builder.Services.AddScoped<IHouseHoldMemberService, HouseHoldMemberService>();
+builder.Services.AddScoped<IApartmentService, ApartmentService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -158,7 +161,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
