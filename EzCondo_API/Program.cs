@@ -129,6 +129,7 @@ builder.Services.AddScoped<IFirebasePushNotificationService, FirebasePushNotific
 builder.Services.AddScoped<IPrice_electric_service, PriceElectricTierService>();
 builder.Services.AddScoped<IPriceWaterTierService, PriceWaterTierService>();
 builder.Services.AddScoped<IPriceParkingLotService, PriceParkingLotService>();
+builder.Services.AddScoped<IHouseHoldMemberService, HouseHoldMemberService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -137,7 +138,7 @@ builder.Services.Configure<CloudinarySettings>(
 
 
 // Add MemoryCache
-//builder.Services.AddMemoryCache();
+builder.Services.AddMemoryCache();
 
 //Add SignalR
 builder.Services.AddSignalR();
@@ -157,7 +158,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

@@ -52,9 +52,16 @@ namespace EzCondo_API.Controllers
 
         [AllowAnonymous]
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordWithCodeDTO dto)
+        public async Task<IActionResult> ResetPassword(ResetPasswordTokenDTO dto)
         {
-            return Ok(await userService.GetPasswordAsync(dto));
+            return Ok(await userService.ResetPasswordAsync(dto.TokenMemory,dto.NewPassword));
+        }
+
+        [AllowAnonymous]
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOTP([FromBody] VerifyOTP_DTO dto)
+        {
+            return Ok(await userService.VerifyOTPAsync(dto.Email,dto.Code));
         }
 
         private string CreateToken(UserViewDTO user)

@@ -21,9 +21,5 @@ public partial class HouseHoldMember
 
     public Guid UserId { get; set; }
 
-    public Guid ApartmentId { get; set; }
-
-    public virtual Apartment Apartment { get; set; } = null!;
-
     public virtual User User { get; set; } = null!;
 }

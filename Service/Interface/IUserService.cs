@@ -19,18 +19,21 @@ namespace Service.IService
 
         Task<Guid> DeleteUserAsync(Guid userId);
 
-        Task ForgotPasswordAsync(string email);
+        Task<string> VerifyOTPAsync(string email, string Code);
 
-        Task<string> GetPasswordAsync(ResetPasswordWithCodeDTO dto);
+
+        Task<string> ResetPasswordAsync(string tokenMemory, string newPassword);
 
         Task<CurrentUserDTO?> GetCurrentUserInfoAsync(Guid userId);
 
         Task<EditUserDTO?> EditCurrentUserInforAsync(EditUserDTO userDTO);
 
-        Task<bool> AddOrUpdateAvtAsync(Guid userId,IFormFile avt);
+        Task<bool> AddOrUpdateAvtAsync(Guid userId, IFormFile avt);
 
-        Task <GetUserByIdDTO?> GetUserByIdDTOAsync(Guid userId);
+        Task<GetUserByIdDTO?> GetUserByIdDTOAsync(Guid userId);
 
-        Task <string?>ChangePasswordAsync(ChangePasswordDTO dto);
+        Task<string?> ChangePasswordAsync(ChangePasswordDTO dto);
+
+        Task ForgotPasswordAsync(string email);
     }
 }

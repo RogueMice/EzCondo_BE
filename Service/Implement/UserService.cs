@@ -6,9 +6,11 @@ using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MimeKit;
+using Newtonsoft.Json.Linq;
 using Service.IService;
 using System;
 using System.Collections.Generic;
@@ -31,15 +33,17 @@ namespace Service.Service
         private readonly IPasswordHasher<User> passwordHasher;
         private readonly IConfiguration configuration;
         private readonly CloudinaryService cloudinaryService;
+        private readonly IMemoryCache memoryCache;
         private static readonly Random _random = new Random();
 
         public UserService(EzCondo_Data.Context.ApartmentDbContext dbContext, IPasswordHasher<User> passwordHasher,
-            IConfiguration configuration, CloudinaryService cloudinaryService)
+            IConfiguration configuration, CloudinaryService cloudinaryService, IMemoryCache memoryCache)
         {
             this.dbContext = dbContext;
             this.passwordHasher = passwordHasher;
             this.configuration = configuration;
             this.cloudinaryService = cloudinaryService;
+            this.memoryCache = memoryCache;
         }
 
         public async Task<UserViewDTO> ValidateUserAsync(LoginDTO dto)
@@ -287,21 +291,44 @@ namespace Service.Service
 
             return;
         }
-
-        public async Task<string> GetPasswordAsync(ResetPasswordWithCodeDTO dto)
+        public async Task<string>VerifyOTPAsync(string email, string Code)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.Email) ?? throw new NotFoundException($"Email {dto.Email} not found !"); ;
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new NotFoundException($"Email {email} not found !"); ;
 
             var resetCode = await dbContext.PasswordResetCodes
-                                        .FirstOrDefaultAsync(r => r.UserId == user.Id
-                                        && r.Code == dto.Code
-                                        && r.ExpireAt > DateTime.UtcNow)
-                                        ?? throw new ConflictException("Confirmation code is not valid or expired!");
+                                       .FirstOrDefaultAsync(r => r.UserId == user.Id
+                                       && r.Code == Code
+                                       && r.ExpireAt > DateTime.UtcNow)
+                                       ?? throw new ConflictException("Confirmation code is not valid or expired!");
 
-            user.Password = HashPassword(dto.NewPassword);
+            //Tạo tokenMemory để lưu vào Cache
+            var tokenMemory = Guid.NewGuid().ToString() + ".RogueMiceMemoryTokenSetting1215125qwrqwrqwrqwrasdasda";
+            //Lưu thông tin vào Cache
+            memoryCache.Set(tokenMemory, email, TimeSpan.FromMinutes(5));
+
+            return $"tokenMemory: {tokenMemory}";
+        }
+
+        public async Task<string> ResetPasswordAsync(string tokenMemory, string newPassword)
+        {
+            //Get Email from token in cache
+            if(!memoryCache.TryGetValue(tokenMemory, out string email))
+            {
+                throw new ConflictException("Token is invalid or expired!");
+            }
+
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new NotFoundException($"Email {email} not found !"); ;
+
+            user.Password = HashPassword(newPassword);
+
+            var resetCode = await dbContext.PasswordResetCodes
+                            .FirstOrDefaultAsync(r => r.UserId == user.Id);
             dbContext.PasswordResetCodes.Remove(resetCode);
 
             await dbContext.SaveChangesAsync();
+
+            //Delete tokenMemory out cache
+            memoryCache.Remove(tokenMemory);
             return "Reset password is successful!!";
         }
 
@@ -437,6 +464,11 @@ namespace Service.Service
             dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
             return "Change password successfully!";
+        }
+
+        public Task SendOTPAsync(string email)
+        {
+            throw new NotImplementedException();
         }
     }
 }

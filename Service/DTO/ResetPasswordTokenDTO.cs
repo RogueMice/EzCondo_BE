@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.DTO
 {
-    public class ResetPasswordWithCodeDTO
+    public class ResetPasswordTokenDTO
     {
-        public string Email { get; set; } = null!;
-        public string Code { get; set; } = null!;
+        public string TokenMemory { get; set; } = null!;
         public string NewPassword { get; set; } = null!;
     }
 }

@@ -19,8 +19,6 @@ public partial class Apartment
 
     public virtual ICollection<ElectricMeter> ElectricMeters { get; set; } = new List<ElectricMeter>();
 
-    public virtual ICollection<HouseHoldMember> HouseHoldMembers { get; set; } = new List<HouseHoldMember>();
-
     public virtual User User { get; set; } = null!;
 
     public virtual ICollection<WaterMeter> WaterMeters { get; set; } = new List<WaterMeter>();

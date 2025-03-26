@@ -66,9 +66,9 @@ public partial class ApartmentDbContext : DbContext
 
     public virtual DbSet<WaterReading> WaterReadings { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=ROGUE_MICE\\SQLEXPRESS;Initial Catalog=Apartment_db;Integrated Security=True;Trust Server Certificate=True");
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//        => optionsBuilder.UseSqlServer("Data Source=ROGUE_MICE\\SQLEXPRESS;Initial Catalog=Apartment_db;Integrated Security=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -257,10 +257,6 @@ public partial class ApartmentDbContext : DbContext
 
             entity.HasIndex(e => e.PhoneNumber, "UQ__HouseHol__A1936A6BA043CE44").IsUnique();
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
-            entity.Property(e => e.ApartmentId).HasColumnName("apartment_id");
             entity.Property(e => e.FullName)
                 .HasMaxLength(50)
                 .HasColumnName("full_name");
@@ -277,11 +273,6 @@ public partial class ApartmentDbContext : DbContext
                 .HasMaxLength(20)
                 .HasColumnName("relationship");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Apartment).WithMany(p => p.HouseHoldMembers)
-                .HasForeignKey(d => d.ApartmentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__HouseHold__apart__236943A5");
 
             entity.HasOne(d => d.User).WithMany(p => p.HouseHoldMembers)
                 .HasForeignKey(d => d.UserId)
