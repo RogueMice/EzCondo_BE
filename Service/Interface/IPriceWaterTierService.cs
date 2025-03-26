@@ -10,5 +10,7 @@ namespace EzConDo_Service.Interface
     public interface IPriceWaterTierService
     {
         Task<Guid?> AddOrUpdateAsync(PriceWaterTierDTO priceWaterTierDTO);
+
+        Task<PriceWaterTierDTO> GetWaterPriceAsync();
     }
 }

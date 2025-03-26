@@ -10,5 +10,7 @@ namespace EzConDo_Service.Interface
     public interface IPriceParkingLotService
     {
         Task<Guid?> AddOrUpdateAsync(PriceParkingLotDTO dto);
+
+        Task<List<PriceParkingLotDTO>> GetParkingPriceAsync();
     }
 }

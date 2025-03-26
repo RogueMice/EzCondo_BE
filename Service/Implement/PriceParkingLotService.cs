@@ -2,6 +2,7 @@
 using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +40,17 @@ namespace EzConDo_Service.Implement
             }
             await dbContext.SaveChangesAsync();
             return parkingLot.Id;
+        }
+
+        public Task<List<PriceParkingLotDTO>> GetParkingPriceAsync()
+        {
+            var parkingLots = dbContext.PriceParkingLots.AsNoTracking().Select(x => new PriceParkingLotDTO
+            {
+                Id = x.Id,
+                PricePerMotor = x.PricePerMotor,
+                PricePerOto = x.PricePerOto
+            }).ToListAsync();
+            return parkingLots;
         }
     }
 }

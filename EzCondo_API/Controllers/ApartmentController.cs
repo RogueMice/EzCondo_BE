@@ -1,4 +1,5 @@
-﻿using EzConDo_Service.Interface;
+﻿using EzConDo_Service.DTO;
+using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +36,14 @@ namespace EzCondo_API.Controllers
         {
             var apartments = await apartmentService.GetApartmentAsync(userId,apartmentNumber);
             return Ok(apartments);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPatch("update-apartment")]
+        public async Task<IActionResult> UpdateApartment([FromBody] ApartmentUpdateDTO dto)
+        {
+            var result = await apartmentService.UpdateApartmentAsync(dto);
+            return Ok(result);
         }
     }
 }

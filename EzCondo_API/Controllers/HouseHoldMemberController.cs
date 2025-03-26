@@ -19,6 +19,18 @@ namespace EzCondo_API.Controllers
             this.houseHoldMemberService = houseHoldMemberService;
         }
 
+        [Authorize(Policy = "Resident")]
+        [HttpGet("get-my-house-hold-member")]
+        public async Task<IActionResult> GetMyHoldHouseMember()
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            var houseHoldMember = await houseHoldMemberService.GetMyHoldHouseMemberAsync(user_Id);
+            return Ok(houseHoldMember);
+        }
+
         [Authorize(Policy = "AdminOrManager")]
         [HttpPost("add-or-update-house-hold-member")]
         public async Task<IActionResult> AddOrUpdateHouseHoldMember([FromBody] HouseHoldMemberDTO dto)
@@ -37,18 +49,6 @@ namespace EzCondo_API.Controllers
             if (result == Guid.Empty)
                 return BadRequest("Delete is failure");
             return Ok($"Deleted id:{id}");
-        }
-
-        [Authorize(Policy = "Resident")]
-        [HttpGet("get-my-house-hold-member")]
-        public async Task<IActionResult> GetMyHoldHouseMember()
-        {
-            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId == null)
-                return Unauthorized();
-            Guid.TryParse(userId, out var user_Id);
-            var houseHoldMember = await houseHoldMemberService.GetMyHoldHouseMemberAsync(user_Id);
-            return Ok(houseHoldMember);
         }
     }
 }

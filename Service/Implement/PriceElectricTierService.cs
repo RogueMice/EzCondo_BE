@@ -1,6 +1,7 @@
 ﻿using EzCondo_Data.Context;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +41,18 @@ namespace EzConDo_Service.Implement
             }
             await dbContext.SaveChangesAsync();
             return priceElectricTier.Id;
+        }
+
+        public Task<List<PriceElectricTierDTO>> GetElectricPriceAsync()
+        {
+            var priceElectricTiers = dbContext.PriceElectricTiers.AsNoTracking().Select(x => new PriceElectricTierDTO
+            {
+                Id = x.Id,
+                MinKWh = x.MinKWh,
+                MaxKWh = x.MaxKWh,
+                PricePerKWh = x.PricePerKWh
+            }).ToListAsync();
+            return priceElectricTiers;
         }
     }
 }

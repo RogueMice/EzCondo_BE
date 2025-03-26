@@ -60,5 +60,14 @@ namespace EzConDo_Service.Implement
 
             return apartments;
         }
+
+        public async Task<string?> UpdateApartmentAsync(ApartmentUpdateDTO apartmentDto)
+        {
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(x => x.Id == apartmentDto.Id) ?? throw new NotFoundException($"ApartmentId: {apartmentDto.Id} is not found !");
+            apartment.Acreage = apartmentDto.Acreage;
+            apartment.Description = apartmentDto.Description;
+            await dbContext.SaveChangesAsync();
+            return "Update apartment successfully !";
+        }
     }
 }

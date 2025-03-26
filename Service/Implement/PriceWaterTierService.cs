@@ -2,6 +2,7 @@
 using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,16 @@ namespace EzConDo_Service.Implement
             }
             await dbContext.SaveChangesAsync();
             return priceWaterTier.Id;
+        }
+
+        public async Task<PriceWaterTierDTO> GetWaterPriceAsync()
+        {
+            var priceWaterTier = await dbContext.PriceWaterTiers.AsNoTracking().FirstOrDefaultAsync();
+            return new PriceWaterTierDTO
+            {
+                Id = priceWaterTier.Id,
+                PricePerM3 = priceWaterTier.PricePerM3
+            };
         }
     }
 }

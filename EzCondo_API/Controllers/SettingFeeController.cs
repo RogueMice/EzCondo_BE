@@ -8,7 +8,6 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "Admin")]
     public class SettingFeeController : ControllerBase
     {
         private readonly IPrice_electric_service electric_Service;
@@ -21,7 +20,28 @@ namespace EzCondo_API.Controllers
             this.priceWaterTierService = priceWaterTierService;
             this.priceParkingLotService = priceParkingLotService;
         }
+        [HttpGet("get-electric-price")]
+        public async Task<IActionResult> GetElectricPrice()
+        {
+            var result = await electric_Service.GetElectricPriceAsync();
+            return Ok(result);
+        }
 
+        [HttpPost("get-water-price")]
+        public async Task<IActionResult> GetWaterPrice()
+        {
+            var result = await priceWaterTierService.GetWaterPriceAsync();
+            return Ok(result);
+        }
+
+        [HttpPost("get-parking-price")]
+        public async Task<IActionResult> GetParkingPrice()
+        {
+            var result = await priceParkingLotService.GetParkingPriceAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Admin")]
         [HttpPost("add-or-update-electric-price")]
         public async Task<IActionResult> AddOrUpdateElectricPrice([FromBody] PriceElectricTierDTO dto)
         {
@@ -29,6 +49,7 @@ namespace EzCondo_API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("add-or-update-water-price")]
         public async Task<IActionResult> AddOrUpdateWaterPrice([FromBody] PriceWaterTierDTO dto)
         {
@@ -36,6 +57,7 @@ namespace EzCondo_API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Admin")]
         [HttpPost("add-or-update-parking-price")]
         public async Task<IActionResult> AddOrUpdateparkingPrice([FromBody] PriceParkingLotDTO dto)
         {

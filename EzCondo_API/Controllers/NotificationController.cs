@@ -37,6 +37,31 @@ namespace EzCondo_API.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("admin-or-manager-get-notifications")]
+        public async Task<IActionResult> GetAllNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? day = 7)
+        {
+            var result = await notificationService.AdminGetNotificationsAsync(page, pageSize, day);
+            if (result == null)
+                return BadRequest();
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("create-notification")]
+        public async Task<IActionResult> CreateNotification(CreateNotificationDTO createNotificationDTO)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+
+            var notification = await notificationService.CreateNotificationAsync(createNotificationDTO, user_Id);
+            if (notification == null)
+                return BadRequest("Create Notification failure");
+            return Ok(notification);
+        }
+
         [HttpPost("notifications/mark-as-read")]
         public async Task<IActionResult> MarkAsRead([FromBody] MarkAsReadRequestDTO request)
         {
@@ -45,16 +70,6 @@ namespace EzCondo_API.Controllers
                 return Unauthorized();
             Guid.TryParse(userId, out var user_Id);
             var result = await notificationService.MarkAsReadAsync(request, user_Id);
-            if (result == null)
-                return BadRequest();
-            return Ok(result);
-        }
-
-        [Authorize(Policy = "Admin")]
-        [HttpGet("admin-get-notifications")]
-        public async Task<IActionResult> GetAllNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? day = 7)
-        {
-            var result = await notificationService.AdminGetNotificationsAsync(page,pageSize,day);
             if (result == null)
                 return BadRequest();
             return Ok(result);

@@ -10,5 +10,7 @@ namespace EzConDo_Service.Interface
     public interface IPrice_electric_service
     {
         Task<Guid?> AddOrUpdateAsync(PriceElectricTierDTO priceElectricTierDTO);
+
+        Task<List<PriceElectricTierDTO>> GetElectricPriceAsync();
     }
 }

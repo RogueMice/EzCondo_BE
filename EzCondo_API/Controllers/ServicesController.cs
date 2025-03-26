@@ -9,7 +9,7 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "AdminOrManager")]
+    [Authorize(Policy = "Admin")]
     public class ServicesController : ControllerBase
     {
         private readonly IService_service _service;
@@ -46,6 +46,24 @@ namespace EzCondo_API.Controllers
             if (serviceImages == null)
                 return BadRequest("Don't have any image !");
             return Ok(serviceImages);
+        }
+
+        [Authorize(Policy = "Admin")]
+        [HttpPost("add-or-update-service")]
+        public async Task<IActionResult> AddService([FromBody] AddServiceDTO serviceDTO)
+        {
+            var service = await _service.AddOrUpdateServiceAsync(serviceDTO);
+            if (service == Guid.Empty)
+                return BadRequest("Add service is failure !");
+            return Ok(service);
+        }
+
+        [Authorize(Policy = "Admin")]
+        [HttpPost("add-or-update-service-images")]
+        public async Task<IActionResult> AddOrUpdateServiceImages([FromForm] Service_ImageDTO serviceImageDTO)
+        {
+            await service_Image.AddOrUpdateServiceImagesAsync(serviceImageDTO);
+            return Ok("AddOrUpdate service images is successful !");
         }
     }
 }
