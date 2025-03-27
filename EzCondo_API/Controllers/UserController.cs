@@ -76,6 +76,16 @@ namespace EzCondo_API.Controllers
             return Ok("Avatar updated successfully!");
         }
 
+        [HttpPost("add-or-update-fcm-token")]
+        public async Task<IActionResult> AddOrUpdateFcmToken([FromBody] UpdateFcmTokenDTO dto)
+        {
+            dto.UserId = Guid.Parse(HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid"));
+            var result = await userDeviceService.AddOrUpdateFcmToken(dto);
+            if (result == null)
+                return BadRequest("Something went wrong !");
+            return Ok(result);
+        }
+
         [Authorize(Policy = "AdminOrManager")]
         [HttpPatch("update-user")]
         public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDTO userDTO)

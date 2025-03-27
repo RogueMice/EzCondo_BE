@@ -27,14 +27,16 @@ namespace EzCondo_API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("get-water-price")]
+        [HttpGet("get-water-price")]
         public async Task<IActionResult> GetWaterPrice()
         {
             var result = await priceWaterTierService.GetWaterPriceAsync();
+            if (result == null)
+                return Ok("Empty!");
             return Ok(result);
         }
 
-        [HttpPost("get-parking-price")]
+        [HttpGet("get-parking-price")]
         public async Task<IActionResult> GetParkingPrice()
         {
             var result = await priceParkingLotService.GetParkingPriceAsync();

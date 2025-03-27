@@ -43,6 +43,11 @@ namespace EzConDo_Service.Implement
         public async Task<PriceWaterTierDTO> GetWaterPriceAsync()
         {
             var priceWaterTier = await dbContext.PriceWaterTiers.AsNoTracking().FirstOrDefaultAsync();
+            if (priceWaterTier == null)
+            {
+                // Handle the case when no record is found
+                return null; // or throw an exception, or return a default PriceWaterTierDTO
+            }
             return new PriceWaterTierDTO
             {
                 Id = priceWaterTier.Id,
