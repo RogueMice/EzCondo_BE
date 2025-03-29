@@ -306,7 +306,7 @@ namespace Service.Service
             //Lưu thông tin vào Cache
             memoryCache.Set(tokenMemory, email, TimeSpan.FromMinutes(5));
 
-            return $"tokenMemory: {tokenMemory}";
+            return tokenMemory;
         }
 
         public async Task<string> ResetPasswordAsync(string tokenMemory, string newPassword)

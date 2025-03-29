@@ -54,7 +54,7 @@ namespace EzCondo_API.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordTokenDTO dto)
         {
-            return Ok(await userService.ResetPasswordAsync(dto.TokenMemory,dto.NewPassword));
+            return Ok(await userService.ResetPasswordAsync(dto.TokenMemory, dto.NewPassword));
         }
 
         [AllowAnonymous]

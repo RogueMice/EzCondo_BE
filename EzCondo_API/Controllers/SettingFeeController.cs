@@ -45,25 +45,42 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Admin")]
         [HttpPost("add-or-update-electric-price")]
-        public async Task<IActionResult> AddOrUpdateElectricPrice([FromBody] PriceElectricTierDTO dto)
+        public async Task<IActionResult> AddElectricPrice([FromBody] PriceElectricTierDTO dto)
         {
             var result = await electric_Service.AddOrUpdateAsync(dto);
             return Ok(result);
         }
 
+
         [Authorize(Policy = "Admin")]
-        [HttpPost("add-or-update-water-price")]
-        public async Task<IActionResult> AddOrUpdateWaterPrice([FromBody] PriceWaterTierDTO dto)
+        [HttpPost("add-water-price")]
+        public async Task<IActionResult> AddWaterPrice([FromBody] PriceWaterTierDTO dto)
         {
-            var result = await priceWaterTierService.AddOrUpdateAsync(dto);
+            var result = await priceWaterTierService.AddAsync(dto);
             return Ok(result);
         }
 
         [Authorize(Policy = "Admin")]
-        [HttpPost("add-or-update-parking-price")]
-        public async Task<IActionResult> AddOrUpdateparkingPrice([FromBody] PriceParkingLotDTO dto)
+        [HttpPatch("update-water-price")]
+        public async Task<IActionResult> UpdateWaterPrice([FromBody] PriceWaterTierDTO dto)
         {
-            var result = await priceParkingLotService.AddOrUpdateAsync(dto);
+            var result = await priceWaterTierService.UpdateAsync(dto);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Admin")]
+        [HttpPost("add-parking-price")]
+        public async Task<IActionResult> AddPrice([FromBody] PriceParkingLotDTO dto)
+        {
+            var result = await priceParkingLotService.AddAsync(dto);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Admin")]
+        [HttpPatch("update-parking-price")]
+        public async Task<IActionResult> UpdateparkingPrice([FromBody] PriceParkingLotDTO dto)
+        {
+            var result = await priceParkingLotService.UpdateAsync(dto);
             return Ok(result);
         }
     }

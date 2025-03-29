@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -19,25 +20,31 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
-        public async Task<Guid?> AddOrUpdateAsync(PriceParkingLotDTO dto)
+        public async Task<Guid?> AddAsync(PriceParkingLotDTO dto)
         {
-            var parkingLot = dbContext.PriceParkingLots.FirstOrDefault(x => x.Id == dto.Id) ?? new PriceParkingLot();
+            var existtingParkingLot = dbContext.PriceParkingLots.FirstOrDefault();
+            if (existtingParkingLot != null)
+            {
+                throw new ConflictException("Price parking lot already exists");
+            }
 
-            //add
-            if (parkingLot.Id == Guid.Empty)
+            var parkingLot = new PriceParkingLot
             {
-                parkingLot.Id = Guid.NewGuid();
-                parkingLot.PricePerMotor = dto.PricePerMotor;
-                parkingLot.PricePerOto = dto.PricePerOto;
-                dbContext.PriceParkingLots.Add(parkingLot);
-            }
-            //update
-            else
-            {
-                parkingLot.PricePerMotor = dto.PricePerMotor;
-                parkingLot.PricePerOto = dto.PricePerOto;
-                dbContext.PriceParkingLots.Update(parkingLot);
-            }
+                Id = Guid.NewGuid(),
+                PricePerMotor = dto.PricePerMotor,
+                PricePerOto = dto.PricePerOto
+            };
+            dbContext.PriceParkingLots.Add(parkingLot);
+            await dbContext.SaveChangesAsync();
+            return parkingLot.Id;
+        }
+
+        public async Task<Guid?> UpdateAsync(PriceParkingLotDTO dto)
+        {
+            var parkingLot = dbContext.PriceParkingLots.FirstOrDefault(x => x.Id == dto.Id) ?? throw new Exception("Price parking lot not found");
+            parkingLot.PricePerMotor = dto.PricePerMotor;
+            parkingLot.PricePerOto = dto.PricePerOto;
+            dbContext.PriceParkingLots.Update(parkingLot);
             await dbContext.SaveChangesAsync();
             return parkingLot.Id;
         }

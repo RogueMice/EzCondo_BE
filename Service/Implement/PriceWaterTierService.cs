@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -19,23 +20,31 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
-        public async Task<Guid?> AddOrUpdateAsync(PriceWaterTierDTO priceWaterTierDTO)
+        public async Task<Guid?> AddAsync(PriceWaterTierDTO priceWaterTierDTO)
         {
-            var priceWaterTier = dbContext.PriceWaterTiers.FirstOrDefault(x => x.Id == priceWaterTierDTO.Id) ?? new PriceWaterTier();
+            var existingPriceWaterTier = dbContext.PriceWaterTiers.FirstOrDefault();
+            if (existingPriceWaterTier != null)
+            {
+                throw new ConflictException("priceWater already exists");
+            }
 
             //add
-            if(priceWaterTier.Id == Guid.Empty)
+            var priceWaterTier = new PriceWaterTier
             {
-                priceWaterTier.Id = Guid.NewGuid();
-                priceWaterTier.PricePerM3 = priceWaterTierDTO.PricePerM3;
-                dbContext.PriceWaterTiers.Add(priceWaterTier);
-            }
-            //update
-            else
-            {
+                Id = Guid.NewGuid(),
+                PricePerM3 = priceWaterTierDTO.PricePerM3
+            };
+
+            dbContext.PriceWaterTiers.Add(priceWaterTier);
+            await dbContext.SaveChangesAsync();
+            return priceWaterTier.Id;
+        }
+
+        public async Task<Guid?> UpdateAsync(PriceWaterTierDTO priceWaterTierDTO)
+        {
+            var priceWaterTier = dbContext.PriceWaterTiers.FirstOrDefault(x => x.Id == priceWaterTierDTO.Id) ?? throw new NotFoundException("priceWater id invalid");
                 priceWaterTier.PricePerM3 = priceWaterTierDTO.PricePerM3;
                 dbContext.PriceWaterTiers.Update(priceWaterTier);
-            }
             await dbContext.SaveChangesAsync();
             return priceWaterTier.Id;
         }
