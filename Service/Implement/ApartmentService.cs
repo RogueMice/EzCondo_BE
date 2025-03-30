@@ -69,5 +69,28 @@ namespace EzConDo_Service.Implement
             await dbContext.SaveChangesAsync();
             return "Update apartment successfully !";
         }
+
+        public async Task<Guid?> AddApartmentAsync(ApartmentViewDTO apartmentDto)
+        {
+            var existingApartment = await dbContext.Apartments.FirstOrDefaultAsync(x => x.ApartmentNumber == apartmentDto.ApartmentNumber);
+
+            if (existingApartment != null)
+            {
+                throw new BadRequestException("Apartment number already exist !");
+            }
+
+            var apartment = new Apartment
+            {
+                Id = Guid.NewGuid(),
+                ApartmentNumber = apartmentDto.ApartmentNumber,
+                ResidentNumber = 0,
+                Acreage = apartmentDto.Acreage,
+                Description = apartmentDto.Description,
+                UserId = null
+            };
+            await dbContext.Apartments.AddAsync(apartment);
+            dbContext.SaveChanges();
+            return apartment.Id;
+        }
     }
 }

@@ -133,6 +133,7 @@ builder.Services.AddScoped<IPriceWaterTierService, PriceWaterTierService>();
 builder.Services.AddScoped<IPriceParkingLotService, PriceParkingLotService>();
 builder.Services.AddScoped<IHouseHoldMemberService, HouseHoldMemberService>();
 builder.Services.AddScoped<IApartmentService, ApartmentService>();
+builder.Services.AddScoped<INotificationImageService, NotificationImageService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -161,7 +162,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

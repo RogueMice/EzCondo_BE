@@ -22,9 +22,9 @@ namespace EzCondo_API.Controllers
         }
 
         [HttpGet("get-all-services")]
-        public async Task<IActionResult> GetAllService()
+        public async Task<IActionResult> GetAllService([FromQuery] string? serviceName, [FromQuery] bool? status)
         {
-            var services = await _service.GetAllServicesAsync();
+            var services = await _service.GetAllServicesAsync(serviceName,status);
             if (services == null)
                 return BadRequest("Don't have any service !");
             return Ok(services);

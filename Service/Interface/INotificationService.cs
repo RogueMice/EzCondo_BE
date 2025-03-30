@@ -10,7 +10,7 @@ namespace EzConDo_Service.Interface
 {
     public interface INotificationService
     {
-        Task<string?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId);
+        Task<Guid?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId);
 
         Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId);
 

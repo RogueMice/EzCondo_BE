@@ -12,13 +12,13 @@
     },
     "https": {
       "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchBrowser": false,
+      //"launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://0.0.0.0:7254;http://0.0.0.0:521"
+      "applicationUrl": "https://0.0.0.0:7254"
     }
   }
 }

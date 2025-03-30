@@ -1,4 +1,5 @@
 ﻿using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.FirebaseIntegration;
 using EzConDo_Service.Interface;
@@ -30,7 +31,7 @@ namespace EzConDo_Service.Implement
             this.hubContext = hubContext;
         }
 
-        public async Task<string> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId)
+        public async Task<Guid?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId)
         {
             var notificationType = notificationDTO.Type.ToLower();
 
@@ -107,7 +108,7 @@ namespace EzConDo_Service.Implement
                 );
             }
 
-            return "Add Notification successfull!";
+            return notification.Id;
         }
 
         public async Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId)

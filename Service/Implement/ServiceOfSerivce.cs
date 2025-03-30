@@ -73,9 +73,21 @@ namespace EzConDo_Service.Implement
             return serviceView;
         }
 
-        public Task<List<ServiceViewDTO>> GetAllServicesAsync()
+        public async Task<List<ServiceViewDTO>> GetAllServicesAsync(string? serviceName, bool? status)
         {
-            var services = dbContext.Services.Select(x => new ServiceViewDTO
+            var query = dbContext.Services.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrEmpty(serviceName))
+            {
+                query = query.Where(x => x.ServiceName.Contains(serviceName));
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(x => x.Status == (status.Value ? "active" : "inactive"));
+            }
+
+            var services = await query.Select(x => new ServiceViewDTO
             {
                 Id = x.Id,
                 ServiceName = x.ServiceName,
@@ -87,7 +99,8 @@ namespace EzConDo_Service.Implement
                 Status = x.Status,
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt
-            }).AsNoTracking().ToListAsync();
+            }).ToListAsync();
+
             return services;
         }
     }

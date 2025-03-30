@@ -86,28 +86,29 @@ namespace Service.Service
             var normalizedPhone = userDTO.PhoneNumber.Trim().ToLowerInvariant();
             var normalizedApartmentNumber = userDTO.ApartmentNumber.Trim().ToLowerInvariant();
             //find role and check email
-            var roleEmailPhoneApartmentCheck = await dbContext.Roles
+            var roleEmailPhoneCheck = await dbContext.Roles
                                     .Where(r => r.Name.ToUpper() == normalizedRoleName)
                                     .Select(r => new
                                     {
                                         RoleId = r.Id,
                                         EmailExists = dbContext.Users.Any(u => u.Email.ToLower() == normalizedEmail),
                                         PhoneExists = dbContext.Users.Any(u => u.PhoneNumber == userDTO.PhoneNumber),
-                                        ApartmentNumberExists = dbContext.Apartments.Any(a => a.ApartmentNumber == userDTO.ApartmentNumber)
                                     })
                                     .FirstOrDefaultAsync();
 
-            if (roleEmailPhoneApartmentCheck == null)
+            if (roleEmailPhoneCheck == null)
                 throw new NotFoundException($"Role '{userDTO.RoleName}' not found !");
 
-            if (roleEmailPhoneApartmentCheck.EmailExists)
+            if (roleEmailPhoneCheck.EmailExists)
                 throw new ConflictException($"Email '{userDTO.Email}' existed");
 
-            if (roleEmailPhoneApartmentCheck.PhoneExists)
+            if (roleEmailPhoneCheck.PhoneExists)
                 throw new ConflictException($"Phone '{userDTO.PhoneNumber}' existed");
 
-            if (roleEmailPhoneApartmentCheck.ApartmentNumberExists)
-                throw new ConflictException($"Apartment number '{userDTO.ApartmentNumber}' existed");
+            //Check apartment table (userId == null)
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == normalizedApartmentNumber) ?? throw new NotFoundException($"Apartment number '{userDTO.ApartmentNumber}' not found !");
+            if(apartment.UserId != null)
+                throw new ConflictException($"Apartment number '{userDTO.ApartmentNumber}' is already in use!");
 
             string randomPassword = GenerateRandomPassword();
             var passwordHash = passwordHasher.HashPassword(null, randomPassword);
@@ -122,20 +123,15 @@ namespace Service.Service
                 Password = passwordHash,
                 Status = "Active",
                 CreateAt = DateTime.UtcNow,
-                RoleId = roleEmailPhoneApartmentCheck.RoleId
-            };
-            var apartment = new Apartment
-            {
-                Id = Guid.NewGuid(),
-                ApartmentNumber = userDTO.ApartmentNumber,
-                ResidentNumber = 1,
-                Acreage = 100,
-                Description = "Nothing ....",
-                UserId = user.Id
+                RoleId = roleEmailPhoneCheck.RoleId
             };
 
             dbContext.Users.Add(user);
-            dbContext.Apartments.Add(apartment);
+
+            //update apartment  
+            apartment.UserId = user.Id;
+            apartment.ResidentNumber = 1;
+            dbContext.Apartments.Update(apartment);
             await dbContext.SaveChangesAsync();
 
             Task.Run(() => SendWelcomeEmailAsync(user.Email, user.FullName, userDTO.RoleName, randomPassword));

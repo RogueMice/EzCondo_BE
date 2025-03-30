@@ -39,6 +39,14 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("add-apartment")]
+        public async Task<IActionResult> AddApartment([FromBody] ApartmentViewDTO dto)
+        {
+            var apartments = await apartmentService.AddApartmentAsync(dto);
+            return Ok(apartments);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPatch("update-apartment")]
         public async Task<IActionResult> UpdateApartment([FromBody] ApartmentUpdateDTO dto)
         {

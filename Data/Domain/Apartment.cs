@@ -15,11 +15,11 @@ public partial class Apartment
 
     public string? Description { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public virtual ICollection<ElectricMeter> ElectricMeters { get; set; } = new List<ElectricMeter>();
 
-    public virtual User User { get; set; } = null!;
+    public virtual User? User { get; set; }
 
     public virtual ICollection<WaterMeter> WaterMeters { get; set; } = new List<WaterMeter>();
 }

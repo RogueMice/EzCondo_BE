@@ -11,7 +11,7 @@ namespace EzConDo_Service.Interface
     {
         Task<Guid?> AddAsync(PriceParkingLotDTO dto);
 
-        Task<List<PriceParkingLotDTO>> GetParkingPriceAsync();
+        Task<PriceParkingLotDTO> GetParkingPriceAsync();
 
         Task<Guid?> UpdateAsync(PriceParkingLotDTO dto);
     }

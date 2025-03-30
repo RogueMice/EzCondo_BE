@@ -54,8 +54,7 @@ namespace EzConDo_Service.Implement
             var priceWaterTier = await dbContext.PriceWaterTiers.AsNoTracking().FirstOrDefaultAsync();
             if (priceWaterTier == null)
             {
-                // Handle the case when no record is found
-                return null; // or throw an exception, or return a default PriceWaterTierDTO
+                throw new NotFoundException("Price water tier not found");
             }
             return new PriceWaterTierDTO
             {

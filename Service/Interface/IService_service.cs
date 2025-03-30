@@ -11,7 +11,7 @@ namespace EzConDo_Service.Interface
     {
         Task<Guid> AddOrUpdateServiceAsync(AddServiceDTO serviceDTO);
 
-        Task<List<ServiceViewDTO>> GetAllServicesAsync();
+        Task<List<ServiceViewDTO>> GetAllServicesAsync(string? serviceName, bool? status);
 
         Task<ServiceViewDTO> GetServiceByIdAsync(Guid serviceId);
     }

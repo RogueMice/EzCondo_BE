@@ -49,15 +49,19 @@ namespace EzConDo_Service.Implement
             return parkingLot.Id;
         }
 
-        public Task<List<PriceParkingLotDTO>> GetParkingPriceAsync()
+        public async Task<PriceParkingLotDTO> GetParkingPriceAsync()
         {
-            var parkingLots = dbContext.PriceParkingLots.AsNoTracking().Select(x => new PriceParkingLotDTO
+            var parkingLots = await dbContext.PriceParkingLots.AsNoTracking().FirstOrDefaultAsync();
+            if (parkingLots == null)
             {
-                Id = x.Id,
-                PricePerMotor = x.PricePerMotor,
-                PricePerOto = x.PricePerOto
-            }).ToListAsync();
-            return parkingLots;
+                throw new NotFoundException("Price parking lot not found");
+            }
+            return new PriceParkingLotDTO
+            {
+                Id = parkingLots.Id,
+                PricePerMotor = parkingLots.PricePerMotor,
+                PricePerOto = parkingLots.PricePerOto
+            };
         }
     }
 }

@@ -51,7 +51,7 @@ namespace EzConDo_Service.Implement
                 houseHoldMember.Gender = houseHoldMemberDTO.Gender;
                 houseHoldMember.PhoneNumber = houseHoldMemberDTO.PhoneNumber;
                 houseHoldMember.Relationship = houseHoldMemberDTO.Relationship;
-                houseHoldMember.UserId = apartment.UserId;
+                houseHoldMember.UserId = apartment.UserId ?? throw new InvalidOperationException("Apartment UserId cannot be null.");
                 dbContext.HouseHoldMembers.Add(houseHoldMember);
 
                 //Upgrade Resident_number

@@ -18,10 +18,12 @@ namespace EzCondo_API.Controllers
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService notificationService;
+        private readonly INotificationImageService imageService;
 
-        public NotificationController(INotificationService notificationService)
+        public NotificationController(INotificationService notificationService, INotificationImageService imageService)
         {
             this.notificationService = notificationService;
+            this.imageService = imageService;
         }
 
         [HttpGet("user-get-notifications")]
@@ -57,6 +59,16 @@ namespace EzCondo_API.Controllers
             Guid.TryParse(userId, out var user_Id);
 
             var notification = await notificationService.CreateNotificationAsync(createNotificationDTO, user_Id);
+            if (notification == null)
+                return BadRequest("Create Notification failure");
+            return Ok(notification);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpPost("create-notification-images")]
+        public async Task<IActionResult> CreateNotificationImages([FromForm] NotificationImageDTO dto)
+        {
+            var notification = await imageService.CreateNotificationImageAsync(dto);
             if (notification == null)
                 return BadRequest("Create Notification failure");
             return Ok(notification);
