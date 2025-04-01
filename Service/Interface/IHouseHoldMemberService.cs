@@ -14,5 +14,7 @@ namespace EzConDo_Service.Interface
         Task<Guid?> DeleteAsync(Guid id);
 
         Task<MyHouseHoldResponseDTO> GetMyHoldHouseMemberAsync(Guid user_id);
+
+        Task<List<MyHouseHoldMemberDTO>> GetHoldHouseMemberByApartmentNumberAsync(string apartmentNumber);
     }
 }

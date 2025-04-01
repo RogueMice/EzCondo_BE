@@ -39,6 +39,14 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("get-apartment-by-id")]
+        public async Task<IActionResult> GetApartmentById([FromQuery] Guid apartmentId)
+        {
+            var apartments = await apartmentService.GetApartmentByIdAsync(apartmentId);
+            return Ok(apartments);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("add-apartment")]
         public async Task<IActionResult> AddApartment([FromBody] ApartmentViewDTO dto)
         {

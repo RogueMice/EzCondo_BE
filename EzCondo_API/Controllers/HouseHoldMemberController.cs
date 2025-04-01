@@ -32,6 +32,14 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("get-house-hold-member-by-apartment-number")]
+        public async Task<IActionResult> GetHoldHouseMemberByApartmentNumber([FromQuery]string apartmentNumber)
+        {
+            var houseHoldMember = await houseHoldMemberService.GetHoldHouseMemberByApartmentNumberAsync(apartmentNumber);
+            return Ok(houseHoldMember);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("add-or-update-house-hold-member")]
         public async Task<IActionResult> AddOrUpdateHouseHoldMember([FromBody] HouseHoldMemberDTO dto)
         {

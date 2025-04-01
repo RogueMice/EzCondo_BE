@@ -111,5 +111,40 @@ namespace EzConDo_Service.Implement
                 Members = houseHoldMembers
             };
         }
+
+        public async Task<List<MyHouseHoldMemberDTO>> GetHoldHouseMemberByApartmentNumberAsync(string apartmentNumber)
+        {
+            var normalizedApartmentNumber = apartmentNumber.ToLower();
+            var apartment = await dbContext.Apartments
+                                           .AsNoTracking()
+                                           .FirstOrDefaultAsync(x => x.ApartmentNumber.ToLower() == normalizedApartmentNumber)
+                                           ?? throw new NotFoundException($"Apartment number: {apartmentNumber} not found!");
+
+            var userId = apartment.UserId ?? throw new NotFoundException($"User id: {apartment.UserId} not found!");
+            var userTask = dbContext.Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == userId);
+
+            var houseHoldMembersTask = dbContext.HouseHoldMembers
+                                   .AsNoTracking()
+                                   .Where(x => x.UserId == userId)
+                                   .Select(x => new MyHouseHoldMemberDTO
+                                   {
+                                       Id = x.Id,
+                                       No = x.No,
+                                       FullName = x.FullName,
+                                       DateOfBirth = x.DateOfBirth,
+                                       Gender = x.Gender,
+                                       PhoneNumber = x.PhoneNumber,
+                                       Relationship = x.Relationship ?? string.Empty
+                                   }).ToListAsync();
+
+            await Task.WhenAll(userTask, houseHoldMembersTask);
+
+            var user = userTask.Result ?? throw new NotFoundException($"User id: {userId} not found!");
+            return await houseHoldMembersTask;
+        }
+
+
     }
 }

@@ -13,6 +13,8 @@ namespace EzConDo_Service.Interface
 
         Task<List<ApartmentViewDTO>> GetApartmentAsync(Guid? userId, string? apartmentNumber);
 
+        Task<ApartmentViewDTO> GetApartmentByIdAsync(Guid apartmentId);
+
         Task<Guid?> AddApartmentAsync(ApartmentViewDTO apartmentDto);
 
         Task<string?> UpdateApartmentAsync(ApartmentUpdateDTO apartmentDto);

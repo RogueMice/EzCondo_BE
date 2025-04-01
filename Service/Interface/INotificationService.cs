@@ -12,6 +12,8 @@ namespace EzConDo_Service.Interface
     {
         Task<Guid?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId);
 
+        //Task<Guid?> UserCreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId);
+
         Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId, string? type);
 
         Task<NotificationViewListDTO> AdminGetNotificationsAsync(int page, int pageSize, int? day, string? receiver, string? type);

@@ -93,5 +93,18 @@ namespace EzConDo_Service.Implement
             dbContext.SaveChanges();
             return apartment.Id;
         }
+
+        public async Task<ApartmentViewDTO> GetApartmentByIdAsync(Guid apartmentId)
+        {
+            var apartment = await dbContext.Apartments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == apartmentId) ?? throw new NotFoundException($"ApartmentId: {apartmentId} is not found !");
+            return new ApartmentViewDTO
+            {
+                Id = apartment.Id,
+                ApartmentNumber = apartment.ApartmentNumber,
+                ResidentNumber = apartment.ResidentNumber,
+                Acreage = apartment.Acreage,
+                Description = apartment.Description
+            };
+        }
     }
 }
