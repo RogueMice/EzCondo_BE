@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using EzCondo_Data.Context;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class Apartment
 {

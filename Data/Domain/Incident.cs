@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EzCondo_Data.Domain;
 
 namespace EzCondo_Data.Context;
 

@@ -54,7 +54,12 @@ namespace EzConDo_Service.Implement
             var parkingLots = await dbContext.PriceParkingLots.AsNoTracking().FirstOrDefaultAsync();
             if (parkingLots == null)
             {
-                throw new NotFoundException("Price parking lot not found");
+                return new PriceParkingLotDTO
+                {
+                    Id = Guid.Empty,
+                    PricePerMotor = 0,
+                    PricePerOto = 0
+                };
             }
             return new PriceParkingLotDTO
             {

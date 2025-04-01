@@ -1,5 +1,4 @@
-﻿using EzCondo_Data.Context;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +17,7 @@ using EzCondo_API.Middleware;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using EzConDo_Service.FirebaseIntegration;
+using EzCondo_Data.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -162,7 +162,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

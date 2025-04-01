@@ -33,18 +33,18 @@ namespace EzConDo_Service.Implement
 
         public async Task<Guid?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId)
         {
-            var notificationType = notificationDTO.Type.ToLower();
+            var notificationReceiver = notificationDTO.Receiver.ToLower();
 
             // Validate role
-            if (notificationType != "all")
+            if (notificationReceiver != "all")
             {
                 var roleExists = await dbContext.Roles
-                    .AnyAsync(r => r.Name.ToLower() == notificationType)
+                    .AnyAsync(r => r.Name.ToLower() == notificationReceiver)
                     .ConfigureAwait(false);
 
                 if (!roleExists)
                 {
-                    throw new NotFoundException($"Role '{notificationDTO.Type}' không tồn tại trong database.");
+                    throw new NotFoundException($"Role '{notificationDTO.Type}' is not found !");
                 }
             }
 
@@ -58,10 +58,10 @@ namespace EzConDo_Service.Implement
                 CreatedAt = DateTime.UtcNow
             };
 
-            var userIds = notificationType == "all"
+            var userIds = notificationReceiver == "all"
                 ? await dbContext.Users.Select(u => u.Id).ToListAsync().ConfigureAwait(false)
                 : await dbContext.Users
-                    .Where(u => u.Role.Name.ToLower() == notificationType)
+                    .Where(u => u.Role.Name.ToLower() == notificationReceiver)
                     .Select(u => u.Id)
                     .ToListAsync()
                     .ConfigureAwait(false);
@@ -71,7 +71,7 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 NotificationId = notification.Id,
                 UserId = userId,
-                Role = notificationType,
+                Receiver = notificationReceiver,
                 IsRead = false,
                 ReadAt = null
             }).ToList();
@@ -111,12 +111,18 @@ namespace EzConDo_Service.Implement
             return notification.Id;
         }
 
-        public async Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId)
+        public async Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId, string? type)
         {
-            var query = dbContext.NotificationReceivers
-                        .Include(nr => nr.Notification)
-                        .Where(nr => nr.UserId == userId && nr.IsRead == isRead) //Check is read
-                        .OrderByDescending(nr => nr.Notification.CreatedAt);
+            IQueryable<NotificationReceiver> query = dbContext.NotificationReceivers
+                                                    .Include(nr => nr.Notification)
+                                                    .Where(nr => nr.UserId == userId && nr.IsRead == isRead) //Check is read
+                                                    .OrderByDescending(nr => nr.Notification.CreatedAt);
+            if (!string.IsNullOrEmpty(type))
+            {
+                query = query.Where(nr => nr.Notification.Type.Contains(type));
+            }
+
+            query = query.OrderByDescending(nr => nr.Notification.CreatedAt);
 
             var totalCount = await query.CountAsync();
             var notifications = await query
@@ -132,8 +138,7 @@ namespace EzConDo_Service.Implement
                                     IsRead = nr.IsRead.Value,
                                     ReadAt = nr.ReadAt,
                                     LastModified = nr.Notification.CreatedAt
-                                })
-                                .ToListAsync();
+                                }).ToListAsync();
             return new NotificationListDTO
             {
                 Total = totalCount,
@@ -141,11 +146,16 @@ namespace EzConDo_Service.Implement
             };
         }
 
-        public async Task<NotificationViewListDTO> AdminGetNotificationsAsync(int page, int pageSize, int? day)
+        public async Task<NotificationViewListDTO> AdminGetNotificationsAsync(int page, int pageSize, int? day, string? receiver, string? type)
         {
-            var query = dbContext.NotificationReceivers
-                                    .Include(nr => nr.Notification)
-                                    .AsQueryable();
+            var query = from n in dbContext.Notifications
+                        join nr in dbContext.NotificationReceivers 
+                        on n.Id equals nr.NotificationId
+                        select new
+                        {
+                            Notification = n,
+                            NotificationReceiver = nr
+                        };
             // Filter by days
             if (day.HasValue && day > 0)
             {
@@ -153,30 +163,45 @@ namespace EzConDo_Service.Implement
                 query = query.Where(nr => nr.Notification.CreatedAt >= cutoffDate);
             }
 
-            // Ordering
-            query = query.OrderByDescending(nr => nr.Notification.CreatedAt);
+            if (!string.IsNullOrEmpty(receiver))
+            {
+                query = query.Where(nr => nr.NotificationReceiver.Receiver.Contains(receiver));
+            }
 
-            // Total count AFTER filtering
-            var totalCount = await query.CountAsync();
+            if (!string.IsNullOrEmpty(type))
+            {
+                query = query.Where(nr => nr.Notification.Type.Contains(type));
+            }
 
-            // Pagination
-            var notifications = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .Select(nr => new NotificationViewDTO
-                {
-                    Id = nr.Notification.Id,
-                    Title = nr.Notification.Title,
-                    Content = nr.Notification.Content,
-                    Type = nr.Notification.Type,
-                    CreatedAt = nr.Notification.CreatedAt
-                })
-                .ToListAsync();
+            var groupedQuery = query.GroupBy(x => x.Notification)
+                               .Select(g => new
+                               {
+                                   Notification = g.Key,
+                                   Receivers = g.Select(x => x.NotificationReceiver.Receiver).Distinct()
+                               });
+
+            // Total query when group
+            int totalRecords = await groupedQuery.CountAsync();
+
+            var data = await groupedQuery
+                            .OrderByDescending(x => x.Notification.CreatedAt)
+                            .Skip((page - 1) * pageSize)
+                            .Take(pageSize)
+                            .Select(x => new NotificationViewDTO
+                            {
+                                Id = x.Notification.Id,
+                                Title = x.Notification.Title,
+                                Content = x.Notification.Content,
+                                Type = x.Notification.Type,
+                                Receiver = string.Join(", ", x.Receivers),
+                                CreatedBy = x.Notification.CreatedBy,
+                                CreatedAt = x.Notification.CreatedAt
+                            }).ToListAsync();
 
             return new NotificationViewListDTO
             {
-                Total = totalCount,
-                Notifications = notifications
+                Total = totalRecords,
+                Notifications = data
             };
         }
 

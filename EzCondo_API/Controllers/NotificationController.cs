@@ -27,13 +27,13 @@ namespace EzCondo_API.Controllers
         }
 
         [HttpGet("user-get-notifications")]
-        public async Task<IActionResult> GetNotifications([FromQuery] bool isRead, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetNotifications([FromQuery] bool isRead, [FromQuery] string? type, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
                 return Unauthorized();
             Guid.TryParse(userId, out var user_Id);
-            var result = await notificationService.GetNotificationsAsync(isRead, page, pageSize, user_Id);
+            var result = await notificationService.GetNotificationsAsync(isRead, page, pageSize, user_Id,type);
             if (result == null)
                 return BadRequest();
             return Ok(result);
@@ -41,9 +41,9 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpGet("admin-or-manager-get-notifications")]
-        public async Task<IActionResult> GetAllNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? day = 7)
+        public async Task<IActionResult> GetAllNotifications([FromQuery] string? type,[FromQuery] string? receiver, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] int? day = 7)
         {
-            var result = await notificationService.AdminGetNotificationsAsync(page, pageSize, day);
+            var result = await notificationService.AdminGetNotificationsAsync(page, pageSize,day,receiver,type);
             if (result == null)
                 return BadRequest();
             return Ok(result);

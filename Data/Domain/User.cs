@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
+using EzCondo_Data.Context;
 
-namespace EzCondo_Data.Context;
-
+namespace EzCondo_Data.Domain;
 public partial class User
 {
     public Guid Id { get; set; }
@@ -30,7 +29,7 @@ public partial class User
 
     public int RoleId { get; set; }
 
-    public virtual ICollection<Apartment> Apartments { get; set; } = new List<Apartment>();
+    public virtual Apartment? Apartment { get; set; }
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 

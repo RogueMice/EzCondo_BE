@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class NotificationReceiver
 {
@@ -12,7 +11,7 @@ public partial class NotificationReceiver
 
     public Guid? UserId { get; set; }
 
-    public string? Role { get; set; }
+    public string? Receiver { get; set; }
 
     public bool? IsRead { get; set; }
 

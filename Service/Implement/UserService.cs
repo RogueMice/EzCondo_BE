@@ -1,5 +1,6 @@
 ﻿using CloudinaryDotNet.Actions;
 using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
 using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using MailKit.Net.Smtp;
@@ -51,7 +52,7 @@ namespace Service.Service
             var user = await dbContext.Users
                  .AsNoTracking()
                  .Include(u => u.Role)
-                 .Include(u => u.Apartments)
+                 .Include(u => u.Apartment)
                  .SingleOrDefaultAsync(u => u.Email == dto.Email)
                  ?? throw new NotFoundException("User is not found ! ");
 
@@ -65,7 +66,7 @@ namespace Service.Service
                 FullName = user.FullName,
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
-                ApartmentNumber = user.Apartments?.FirstOrDefault()?.ApartmentNumber ?? string.Empty,
+                ApartmentNumber = user.Apartment?.ApartmentNumber ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
                 Email = user.Email,
                 Status = user.Status,
