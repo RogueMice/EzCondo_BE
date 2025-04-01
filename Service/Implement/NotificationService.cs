@@ -111,15 +111,20 @@ namespace EzConDo_Service.Implement
             return notification.Id;
         }
 
-        public async Task<NotificationListDTO> GetNotificationsAsync(bool isRead, int page, int pageSize, Guid userId, string? type)
+        public async Task<NotificationListDTO> GetNotificationsAsync(bool? isRead, int page, int pageSize, Guid userId, string? type)
         {
             IQueryable<NotificationReceiver> query = dbContext.NotificationReceivers
                                                     .Include(nr => nr.Notification)
-                                                    .Where(nr => nr.UserId == userId && nr.IsRead == isRead) //Check is read
+                                                    .Where(nr => nr.UserId == userId) 
                                                     .OrderByDescending(nr => nr.Notification.CreatedAt);
             if (!string.IsNullOrEmpty(type))
             {
                 query = query.Where(nr => nr.Notification.Type.Contains(type));
+            }
+
+            if (isRead.HasValue)
+            {
+                query = query.Where(nr => nr.IsRead == isRead);
             }
 
             query = query.OrderByDescending(nr => nr.Notification.CreatedAt);

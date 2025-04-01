@@ -27,7 +27,7 @@ namespace EzCondo_API.Controllers
         }
 
         [HttpGet("user-get-notifications")]
-        public async Task<IActionResult> GetNotifications([FromQuery] bool isRead, [FromQuery] string? type, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetNotifications([FromQuery] bool? isRead, [FromQuery] string? type, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
