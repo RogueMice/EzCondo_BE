@@ -121,11 +121,12 @@ namespace EzConDo_Service.Implement
                                            ?? throw new NotFoundException($"Apartment number: {apartmentNumber} not found!");
 
             var userId = apartment.UserId ?? throw new NotFoundException($"User id: {apartment.UserId} not found!");
-            var userTask = dbContext.Users
+            var userTask = await dbContext.Users
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == userId);
+                        .FirstOrDefaultAsync(x => x.Id == userId)
+                        ?? throw new NotFoundException($"User id: {userId} not found!");
 
-            var houseHoldMembersTask = dbContext.HouseHoldMembers
+            var houseHoldMembersTask = await dbContext.HouseHoldMembers
                                    .AsNoTracking()
                                    .Where(x => x.UserId == userId)
                                    .Select(x => new MyHouseHoldMemberDTO
@@ -139,10 +140,7 @@ namespace EzConDo_Service.Implement
                                        Relationship = x.Relationship ?? string.Empty
                                    }).ToListAsync();
 
-            await Task.WhenAll(userTask, houseHoldMembersTask);
-
-            var user = userTask.Result ?? throw new NotFoundException($"User id: {userId} not found!");
-            return await houseHoldMembersTask;
+            return houseHoldMembersTask;
         }
 
 

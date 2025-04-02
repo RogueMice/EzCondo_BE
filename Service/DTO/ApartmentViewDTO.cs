@@ -17,5 +17,7 @@ namespace EzConDo_Service.DTO
         public decimal Acreage { get; set; }
 
         public string? Description { get; set; }
+
+        public Guid? UserId { get; set; }
     }
 }

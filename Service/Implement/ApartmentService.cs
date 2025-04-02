@@ -56,7 +56,8 @@ namespace EzConDo_Service.Implement
                     ApartmentNumber = apartment.ApartmentNumber,
                     ResidentNumber = apartment.ResidentNumber,
                     Acreage = apartment.Acreage,
-                    Description = apartment.Description
+                    Description = apartment.Description,
+                    UserId = apartment.UserId
                 }).ToListAsync();
 
             return apartments;
@@ -103,7 +104,8 @@ namespace EzConDo_Service.Implement
                 ApartmentNumber = apartment.ApartmentNumber,
                 ResidentNumber = apartment.ResidentNumber,
                 Acreage = apartment.Acreage,
-                Description = apartment.Description
+                Description = apartment.Description,
+                UserId = apartment.UserId
             };
         }
     }
