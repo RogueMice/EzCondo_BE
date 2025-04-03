@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -53,6 +54,14 @@ namespace EzConDo_Service.Implement
                 PricePerKWh = x.PricePerKWh
             }).ToListAsync();
             return priceElectricTiers;
+        }
+
+        public async Task<Guid?> DeleteElectricPriceAsync(Guid? electricPriceId)
+        {
+            var priceElectricTier = await dbContext.PriceElectricTiers.FirstOrDefaultAsync(x => x.Id == electricPriceId) ?? throw new NotFoundException($"Electric price with id {electricPriceId} not found");
+            dbContext.PriceElectricTiers.Remove(priceElectricTier);
+            await dbContext.SaveChangesAsync();
+            return priceElectricTier.Id;
         }
     }
 }

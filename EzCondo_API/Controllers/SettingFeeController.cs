@@ -51,7 +51,6 @@ namespace EzCondo_API.Controllers
             return Ok(result);
         }
 
-
         [Authorize(Policy = "Admin")]
         [HttpPost("add-water-price")]
         public async Task<IActionResult> AddWaterPrice([FromBody] PriceWaterTierDTO dto)
@@ -81,6 +80,14 @@ namespace EzCondo_API.Controllers
         public async Task<IActionResult> UpdateparkingPrice([FromBody] PriceParkingLotDTO dto)
         {
             var result = await priceParkingLotService.UpdateAsync(dto);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Admin")]
+        [HttpDelete("delete-electric-price")]
+        public async Task<IActionResult> DeleteElectricPrice([FromQuery] Guid electricId)
+        {
+            var result = await electric_Service.DeleteElectricPriceAsync(electricId);
             return Ok(result);
         }
     }

@@ -12,5 +12,7 @@ namespace EzConDo_Service.Interface
         Task<Guid?> AddOrUpdateAsync(PriceElectricTierDTO priceElectricTierDTO);
 
         Task<List<PriceElectricTierDTO>> GetElectricPriceAsync();
+
+        Task<Guid?> DeleteElectricPriceAsync(Guid? electricPriceId);
     }
 }

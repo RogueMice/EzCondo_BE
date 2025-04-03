@@ -9,7 +9,7 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "Admin")]
+    [Authorize]
     public class ServicesController : ControllerBase
     {
         private readonly IService_service _service;
