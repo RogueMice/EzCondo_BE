@@ -52,7 +52,7 @@ namespace Service.Service
             var user = await dbContext.Users
                  .AsNoTracking()
                  .Include(u => u.Role)
-                 .Include(u => u.Apartment)
+                 .Include(u => u.Apartments)
                  .SingleOrDefaultAsync(u => u.Email == dto.Email)
                  ?? throw new NotFoundException("User is not found ! ");
 
@@ -66,7 +66,7 @@ namespace Service.Service
                 FullName = user.FullName,
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
-                ApartmentNumber = user.Apartment?.ApartmentNumber ?? string.Empty,
+                ApartmentNumber = user.Apartments?.FirstOrDefault()?.ApartmentNumber ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
                 Email = user.Email,
                 Status = user.Status,

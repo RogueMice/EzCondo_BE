@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class Incident
 {
@@ -12,6 +11,8 @@ public partial class Incident
 
     public string Title { get; set; } = null!;
 
+    public string Type { get; set; } = null!;
+
     public string Description { get; set; } = null!;
 
     public DateTime ReportedAt { get; set; }
@@ -20,9 +21,7 @@ public partial class Incident
 
     public int Priority { get; set; }
 
-    public DateTime? UpdatedAt { get; set; }
-
-    public virtual ICollection<IncidentDetail> IncidentDetails { get; set; } = new List<IncidentDetail>();
+    public virtual ICollection<IncidentImage> IncidentImages { get; set; } = new List<IncidentImage>();
 
     public virtual User User { get; set; } = null!;
 }

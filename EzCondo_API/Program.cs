@@ -134,6 +134,8 @@ builder.Services.AddScoped<IPriceParkingLotService, PriceParkingLotService>();
 builder.Services.AddScoped<IHouseHoldMemberService, HouseHoldMemberService>();
 builder.Services.AddScoped<IApartmentService, ApartmentService>();
 builder.Services.AddScoped<INotificationImageService, NotificationImageService>();
+builder.Services.AddScoped<I_incidentService, IncidentService>();
+builder.Services.AddScoped<I_IncidentImage, IncidentImageService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();

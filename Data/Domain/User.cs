@@ -29,7 +29,7 @@ public partial class User
 
     public int RoleId { get; set; }
 
-    public virtual Apartment? Apartment { get; set; }
+    public virtual ICollection<Apartment> Apartments { get; set; } = new List<Apartment>();
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
