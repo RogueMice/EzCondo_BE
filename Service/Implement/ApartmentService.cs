@@ -36,7 +36,7 @@ namespace EzConDo_Service.Implement
             };
         }
 
-        public async Task<List<ApartmentViewDTO>> GetApartmentAsync(Guid? userId, string? apartmentNumber)
+        public async Task<List<ApartmentViewDTO>> GetApartmentAsync(Guid? userId, string? apartmentNumber, bool? status)
         {
             var query = dbContext.Apartments.AsNoTracking().AsQueryable();
 
@@ -49,6 +49,15 @@ namespace EzConDo_Service.Implement
             {
                 query = query.Where(x => x.ApartmentNumber.Contains(apartmentNumber));
             }
+
+            if (status.HasValue)
+            {
+                if (status.Value)
+                    query = query.Where(x => x.UserId != null);
+                else
+                    query = query.Where(x => x.UserId == null);
+            }
+
 
             var apartments = await query
                 .Select(apartment => new ApartmentViewDTO

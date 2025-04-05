@@ -32,9 +32,9 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "AdminOrManager")]
         [HttpGet("get-all-apartment")]
-        public async Task<IActionResult> GetAllApartment([FromQuery] Guid? userId, [FromQuery] string? apartmentNumber)
+        public async Task<IActionResult> GetAllApartment([FromQuery] Guid? userId, [FromQuery] string? apartmentNumber,[FromQuery] bool? status)
         {
-            var apartments = await apartmentService.GetApartmentAsync(userId,apartmentNumber);
+            var apartments = await apartmentService.GetApartmentAsync(userId,apartmentNumber,status);
             return Ok(apartments);
         }
 
