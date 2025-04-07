@@ -232,18 +232,27 @@ namespace Service.Service
 
         public async Task<Guid> DeleteUserAsync(Guid userId)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId) ?? throw new NotFoundException($"UserId {userId} not found !");
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId)
+                        ?? throw new NotFoundException($"UserId {userId} not found !");
 
             var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userId);
-            if (apartment is not null)
+            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == userId);
+            var notificationReceivers = await dbContext.NotificationReceivers.Where(n => n.UserId == userId).ToListAsync();
+
+            if (apartment != null)
             {
-                dbContext.Apartments.Remove(apartment);
+                apartment.UserId = null;
+                dbContext.Apartments.Update(apartment);
             }
 
-            var citizen = await dbContext.Citizens.FirstOrDefaultAsync(c => c.UserId == userId);
-            if (citizen is not null)
+            if (citizen != null)
             {
                 dbContext.Citizens.Remove(citizen);
+            }
+
+            if (notificationReceivers != null && notificationReceivers.Any())
+            {
+                dbContext.NotificationReceivers.RemoveRange(notificationReceivers);
             }
 
             dbContext.Users.Remove(user);

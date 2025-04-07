@@ -24,7 +24,7 @@ namespace EzCondo_API.Controllers
             this.userDeviceService = userDeviceService;
         }
 
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("get-all-users")]
         public async Task<IActionResult> GetAll(string? roleName, string? search)
         {
