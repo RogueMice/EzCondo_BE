@@ -38,8 +38,15 @@ namespace EzCondo_API.Controllers
             var user = await userService.ValidateUserAsync(dto);
             if (user is null)
                 return Unauthorized("Email or password is not true ... Please login again!");
-            var token = CreateToken(user);
-            return Ok(new{token});
+            var response = new
+            {
+                data = new
+                {
+                    token = CreateToken(user),
+                    role = user.RoleName
+                }
+            }; 
+            return Ok(response);
         }
 
         [AllowAnonymous]
