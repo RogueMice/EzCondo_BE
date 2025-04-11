@@ -34,5 +34,14 @@ namespace EzConDo_Service.ExceptionsConfig
             public ConflictException(string message, Exception inner)
                 : base(message, inner) { }
         }
+
+        // 423 Locked
+        public class LockedException : Exception
+        {
+            public LockedException() : base() { }
+            public LockedException(string message) : base(message) { }
+            public LockedException(string message, Exception inner)
+                : base(message, inner) { }
+        }
     }
 }

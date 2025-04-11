@@ -47,6 +47,10 @@ namespace EzCondo_API.Middleware
                     statusCode = HttpStatusCode.Conflict;     // 409
                     message = ex.Message;
                     break;
+                case LockedException:                         //423
+                    statusCode = HttpStatusCode.Locked;
+                    message = ex.Message;
+                    break;
                 default:
                     logger.LogError(ex, ex.Message);
                     break;

@@ -55,6 +55,10 @@ namespace Service.Service
                  .Include(u => u.Apartments)
                  .SingleOrDefaultAsync(u => u.Email == dto.Email)
                  ?? throw new NotFoundException("User is not found ! ");
+            if (user.Status.ToLower() == "inactive")
+            {
+                throw new LockedException("Your account is blocked ! ");
+            }
 
             var result = passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password);
             if (result != PasswordVerificationResult.Success)
@@ -199,35 +203,28 @@ namespace Service.Service
             user.UpdateAt = DateTime.UtcNow;
 
             bool apartmentNumberExists = await dbContext.Apartments.AnyAsync(
+                                                                        a => a.ApartmentNumber == userDTO.ApartmentNumber);
+            if(!apartmentNumberExists)
+            {
+                throw new NotFoundException($"Apartment Number {userDTO.ApartmentNumber} not found !");
+            }
+
+            bool apartmentNumberExistsAndEmpty = await dbContext.Apartments.AnyAsync(
                                                                         a => a.ApartmentNumber == userDTO.ApartmentNumber
                                                                         && a.UserId != userDTO.Id);
-            if (apartmentNumberExists)
+            if (apartmentNumberExistsAndEmpty)
             {
                 throw new ConflictException($"Apartment number '{userDTO.ApartmentNumber}' is already in use!");
             }
-
-            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(u => u.UserId == userDTO.Id);
-
-            if (apartment != null)
+            if(userDTO.Status.ToLower() == "active" || userDTO.Status.ToLower() == "inactive")
             {
+                var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.UserId == userDTO.Id);
                 apartment.ApartmentNumber = userDTO.ApartmentNumber;
-            }
-            else
-            {
-                apartment = new Apartment()
-                {
-                    Id = Guid.NewGuid(),
-                    ApartmentNumber = userDTO.ApartmentNumber,
-                    ResidentNumber = 1,
-                    Acreage = 100,
-                    Description = "Nothing ....",
-                    UserId = user.Id
-                };
-                dbContext.Apartments.Add(apartment);
-            }
 
-            await dbContext.SaveChangesAsync();
-            return userDTO.Id;
+                await dbContext.SaveChangesAsync();
+                return userDTO.Id;
+            }
+            throw new NotFoundException($"Status: {userDTO.Status} is not found");
         }
 
         public async Task<Guid> DeleteUserAsync(Guid userId)

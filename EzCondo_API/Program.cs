@@ -136,6 +136,7 @@ builder.Services.AddScoped<IApartmentService, ApartmentService>();
 builder.Services.AddScoped<INotificationImageService, NotificationImageService>();
 builder.Services.AddScoped<I_incidentService, IncidentService>();
 builder.Services.AddScoped<I_IncidentImage, IncidentImageService>();
+builder.Services.AddScoped<IElectricMeterService, ElectricMetterService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -164,7 +165,7 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
