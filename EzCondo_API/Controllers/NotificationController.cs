@@ -86,5 +86,19 @@ namespace EzCondo_API.Controllers
                 return BadRequest();
             return Ok(result);
         }
+
+        [Authorize(Policy = "Manager")]
+        [HttpPost("manager-send-to-user")]
+        public async Task<IActionResult> SendNotificationToUser([FromBody] SendNotificationToUserDTO dto)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            var result = await notificationService.CreateNotificationToUserAsync(dto, user_Id);
+            if (result == null)
+                return BadRequest();
+            return Ok(result);
+        }
     }
 }

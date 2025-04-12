@@ -239,5 +239,63 @@ namespace EzConDo_Service.Implement
                 });
             return "Mark as read successfull!";
         }
+
+        public async Task<Guid?> CreateNotificationToUserAsync(SendNotificationToUserDTO notificationDTO, Guid userId)
+        {
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == notificationDTO.ApartmentNumber && a.UserId != null) 
+                ?? throw new NotFoundException($"Apartment Number {notificationDTO.ApartmentNumber} is not found or have no users!");
+
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid(),
+                Title = notificationDTO.Title,
+                Content = notificationDTO.Content,
+                Type = notificationDTO.Type,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var receivers = new NotificationReceiver
+            {
+                Id = Guid.NewGuid(),
+                NotificationId = notification.Id,
+                UserId = apartment.UserId.Value,
+                Receiver = "resident",
+                IsRead = false,
+                ReadAt = null
+            };
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+
+            try
+            {
+                dbContext.Notifications.Add(notification);
+                dbContext.NotificationReceivers.Add(receivers);
+
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                await transaction.CommitAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                await transaction.RollbackAsync().ConfigureAwait(false);
+                throw;
+            }
+
+            var deviceTokens = await dbContext.UserDevices
+                .Where(ud => ud.UserId == apartment.UserId.Value && ud.IsActive)
+                .Select(ud => ud.FcmToken)
+                .ToListAsync();
+
+            if (deviceTokens.Any())
+            {
+                await firebasePush.SendPushNotificationAsync(
+                    notification.Title,
+                    notification.Content,
+                    deviceTokens
+                );
+            }
+
+            return notification.Id;
+        }
     }
 }
