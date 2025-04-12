@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
@@ -21,7 +22,7 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
-        public async Task<List<ElectricMetterDTO>> AddElectricMetters(IFormFile file)
+        public async Task<List<ElectricMetterDTO>> AddElectricMettersAsync(IFormFile file)
         {
             if(file == null || file.Length == 0)
             {
@@ -67,14 +68,14 @@ namespace EzConDo_Service.Implement
 
                         if (!DateOnly.TryParseExact(installationDateValue, validFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out installationDate))
                         {
-                            throw new Exception($"Invalid installation date at the line: {row.RowNumber()} - Value: {installationDateValue}");
+                            throw new ConflictException($"Invalid installation date at the line: {row.RowNumber()} - Value: {installationDateValue}");
                         }
                     }
 
                     //ApartmentNumber
                     string apartmentNumber = row.Cell(4).GetValue<string>().Trim();
                     var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber) 
-                        ?? throw new Exception($"'{apartmentNumber}' at row: {row.RowNumber()} is not found"); ;
+                        ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found"); ;
 
 
                     var dto = new ElectricMetterDTO
@@ -101,6 +102,115 @@ namespace EzConDo_Service.Implement
 
                 return electricMetters;
             }
+        }
+
+        public async Task<List<ElectricReadingDTO>> AddElectricReadingAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty or null");
+
+            var electricReadings = new List<ElectricReadingDTO>();
+
+            using (var stream = file.OpenReadStream())
+            using (var workbook = new XLWorkbook(stream))
+            {
+                var worksheet = workbook.Worksheet(1);
+                var rows = worksheet.RowsUsed().Skip(1);
+
+                foreach (var row in rows)
+                {
+                    string meterNumber = row.Cell(2).GetValue<string>().Trim();
+                    string currentElectricStr = row.Cell(3).GetValue<string>().Trim();
+
+                    if (string.IsNullOrEmpty(meterNumber) || string.IsNullOrEmpty(currentElectricStr))
+                        throw new Exception($"Missing data at row {row.RowNumber()}");
+
+                    var electricMeter = await dbContext.ElectricMeters
+                        .FirstOrDefaultAsync(e => e.MeterNumber == meterNumber)
+                        ?? throw new NotFoundException($"Electric meter '{meterNumber}' at row {row.RowNumber()} not found");
+
+                    //Check apartment use by user
+                    var apartment = await dbContext.Apartments.
+                        FirstOrDefaultAsync(a => a.Id == electricMeter.ApartmentId && a.UserId != null)
+                        ?? throw new ConflictException($"Apartment id: {electricMeter.ApartmentId} have no users!");
+
+
+                    if (!decimal.TryParse(currentElectricStr, out var currentElectricNumber))
+                        throw new Exception($"Invalid number format at row {row.RowNumber()}");
+
+                    // Tìm lần đọc gần nhất để lấy số điện cũ
+                    var lastReading = await dbContext.ElectricReadings
+                        .Where(r => r.ElectricMetersId == electricMeter.Id)
+                        .OrderByDescending(r => r.ReadingDate)
+                        .FirstOrDefaultAsync();
+
+                    decimal preElectricNumber = lastReading?.CurrentElectricNumber ?? 0; // Nếu không có lần đọc nào trước đó, gán = 0
+                    decimal consumption = currentElectricNumber - preElectricNumber;
+
+                    if (consumption < 0)
+                        throw new Exception($"Invalid reading: new reading ({currentElectricNumber}) < previous reading ({preElectricNumber}) at row {row.RowNumber()}");
+
+                    var dto = new ElectricReadingDTO
+                    {
+                        Id = Guid.NewGuid(),
+                        ElectricMetersId = electricMeter.Id,
+                        PreElectricNumber = preElectricNumber,
+                        CurrentElectricNumber = currentElectricNumber,
+                        Consumption = consumption,
+                        ReadingDate = DateTime.Now
+                    };
+
+                    electricReadings.Add(dto);
+                }
+
+                // Map DTO -> Entity
+                var entities = electricReadings.Select(dto => new ElectricReading
+                {
+                    Id = dto.Id,
+                    ElectricMetersId = dto.ElectricMetersId,
+                    ReadingDate = dto.ReadingDate,
+                    PreElectricNumber = dto.PreElectricNumber,
+                    CurrentElectricNumber = dto.CurrentElectricNumber,
+                    Consumption = dto.Consumption
+                });
+
+                await dbContext.AddRangeAsync(entities);
+                await dbContext.SaveChangesAsync();
+
+                return electricReadings;
+            }
+        }
+
+        public async Task<List<ElectricMetterDTO>> GetAllElectricMettersAsync()
+        {
+            var electricMetters = await dbContext.ElectricMeters
+                .Include(em => em.Apartment)
+                .Select(em => new ElectricMetterDTO
+                {
+                    Id = em.Id,
+                    MeterNumber = em.MeterNumber,
+                    InstallationDate = em.InstallationDate,
+                    ApartmentId = em.ApartmentId
+                })
+                .ToListAsync();
+            return electricMetters;
+        }
+
+        public async Task<List<ElectricReadingDTO>> GetAllElectricReadingsAsync()
+        {
+            var electricReadings = await dbContext.ElectricReadings
+                .Include(er => er.ElectricMeters)
+                .Select(er => new ElectricReadingDTO
+                {
+                    Id = er.Id,
+                    ElectricMetersId = er.ElectricMetersId,
+                    ReadingDate = er.ReadingDate,
+                    PreElectricNumber = er.PreElectricNumber,
+                    CurrentElectricNumber = er.CurrentElectricNumber,
+                    Consumption = er.Consumption
+                })
+                .ToListAsync();
+            return electricReadings;
         }
     }
 }

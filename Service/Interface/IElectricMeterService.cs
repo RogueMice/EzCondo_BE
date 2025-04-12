@@ -1,4 +1,5 @@
-﻿using EzConDo_Service.DTO;
+﻿using EzCondo_Data.Context;
+using EzConDo_Service.DTO;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,14 @@ namespace EzConDo_Service.Interface
 {
     public interface IElectricMeterService
     {
-        Task<List<ElectricMetterDTO>> AddElectricMetters(IFormFile file);
+        Task<List<ElectricMetterDTO>> AddElectricMettersAsync(IFormFile file);
+
+        Task<List<ElectricMetterDTO>> GetAllElectricMettersAsync();
+
+        Task<List<ElectricReadingDTO>> AddElectricReadingAsync(IFormFile file);
+
+        Task<List<ElectricReadingDTO>> GetAllElectricReadingsAsync();
+
+
     }
 }
