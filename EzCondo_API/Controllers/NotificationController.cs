@@ -14,6 +14,7 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService notificationService;
@@ -48,6 +49,14 @@ namespace EzCondo_API.Controllers
             if (result == null)
                 return BadRequest();
             return Ok(result);
+        }
+
+
+        [HttpGet("get-notification-images-by-id")]
+        public async Task<IActionResult> GetNotificationImagesById([FromQuery] Guid notificationId)
+        {
+            var notification = await imageService.GetNotificationImageAsync(notificationId);
+            return Ok(notification);
         }
 
         [Authorize(Policy = "AdminOrManager")]

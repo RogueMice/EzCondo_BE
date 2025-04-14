@@ -10,5 +10,7 @@ namespace EzConDo_Service.Interface
     public interface INotificationImageService
     {
         Task<string?> CreateNotificationImageAsync(NotificationImageDTO dto);
+
+        Task<List<NotificationImageViewDTO>> GetNotificationImageAsync(Guid notificationId);
     }
 }

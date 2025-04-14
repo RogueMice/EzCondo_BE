@@ -56,5 +56,21 @@ namespace EzConDo_Service.Implement
             await dbContext.SaveChangesAsync();
             return "Upload image is successful !";
         }
+
+        public async Task<List<NotificationImageViewDTO>> GetNotificationImageAsync(Guid notificationId)
+        {
+            var notification = await dbContext.Notifications.FirstOrDefaultAsync(n => n.Id == notificationId) ?? throw new NotFoundException("Notification not found");
+
+            var notificationImages = await dbContext.NotificationImages
+                .Where(n => n.NotificationId == notificationId)
+                .Select(n => new NotificationImageViewDTO
+                {
+                    Id = n.Id,
+                    Image = n.ImagePath,
+                    NotificationId = n.NotificationId
+                })
+                .ToListAsync();
+            return notificationImages;
+        }
     }
 }

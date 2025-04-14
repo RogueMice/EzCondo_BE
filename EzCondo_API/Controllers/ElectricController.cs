@@ -3,6 +3,7 @@ using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EzCondo_API.Controllers
 {
@@ -44,6 +45,18 @@ namespace EzCondo_API.Controllers
         public async Task<IActionResult> GetElectricDetail([FromQuery] Guid electricId)
         {
             var electricDetail = await electricService.GetElectricDetailAsync(electricId);
+            return Ok(electricDetail);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("Get-My-Electric-Detail")]
+        public async Task<IActionResult> GetMyElectricDetail([FromQuery] bool? status)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            var electricDetail = await electricService.GetMyElectricDetailAsync(user_Id, status);
             return Ok(electricDetail);
         }
 

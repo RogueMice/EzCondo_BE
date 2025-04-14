@@ -172,6 +172,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 //Use Hub
+
 app.MapHub<NotificationHub>("/notificationHub");
 
 //Declare Authen

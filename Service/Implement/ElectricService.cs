@@ -75,7 +75,7 @@ namespace EzConDo_Service.Implement
                     //ApartmentNumber
                     string apartmentNumber = row.Cell(4).GetValue<string>().Trim();
                     var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber) 
-                        ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found"); ;
+                        ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found"); 
 
 
                     var dto = new ElectricMetterDTO
@@ -85,6 +85,15 @@ namespace EzConDo_Service.Implement
                         InstallationDate = installationDate,
                         ApartmentId = apartment.Id
                     };
+
+                    // Check exist
+                    var existingMeter = await dbContext.ElectricMeters
+                        .FirstOrDefaultAsync(em => em.MeterNumber == dto.MeterNumber);
+                    if (existingMeter != null)
+                    {
+                        // Ví dụ: nếu tồn tại bỏ qua và tiếp tục đọc dòng tiếp theo.
+                        continue;
+                    }
 
                     electricMetters.Add(dto);
                 }
@@ -176,6 +185,12 @@ namespace EzConDo_Service.Implement
 
                 await dbContext.AddRangeAsync(entities);
                 await dbContext.SaveChangesAsync();
+
+                //add ElectricBill
+                foreach (var reading in electricReadings)
+                {
+                    await AddElectricBillAsync(reading.Id); // bỏ qua chờ đợi 
+                }
 
                 return electricReadings;
             }
@@ -302,6 +317,95 @@ namespace EzConDo_Service.Implement
                 current_electric_number = electricReading.CurrentElectricNumber,
                 price = totalPrice
             };
+        }
+
+        public async Task<Guid?> AddElectricBillAsync(Guid electricReadingId)
+        {
+            var electricReading = await dbContext.ElectricReadings
+                               .Include(er => er.ElectricMeters)
+                               .ThenInclude(em => em.Apartment)
+                               .ThenInclude(a => a.User)
+                               .FirstOrDefaultAsync(er => er.Id == electricReadingId)
+                               ?? throw new NotFoundException($"ElectricReadingId {electricReadingId} is not found !");
+
+            var tiers = await dbContext.PriceElectricTiers
+                        .OrderBy(t => t.MinKWh)
+                        .ToListAsync();
+
+            decimal consumption = electricReading.Consumption;
+            decimal remaining = consumption;
+            decimal totalPrice = 0;
+
+            foreach (var tier in tiers)
+            {
+                decimal tierMin = tier.MinKWh;
+                decimal tierMax = tier.MaxKWh == 0 ? decimal.MaxValue : tier.MaxKWh;
+                decimal unitsInTier = Math.Min(remaining, tierMax - tierMin + 1);
+
+                if (consumption >= tierMin)
+                {
+                    totalPrice += unitsInTier * tier.PricePerKWh;
+                    remaining -= unitsInTier;
+                }
+
+                if (remaining <= 0)
+                    break;
+            }
+
+            await dbContext.AddAsync(new ElectricBill
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = (Guid)electricReading.ElectricMeters.Apartment.UserId,
+                ReadingId = electricReading.Id,
+                TotalComsumption = electricReading.Consumption,
+                TotalAmount = totalPrice,
+                CreateDate = DateTime.Now,
+                Status = "pending"
+            });
+            await dbContext.SaveChangesAsync();
+            return electricReading.ElectricMeters.Apartment.UserId;
+        }
+
+        public async Task<List<MyElectricDetailDTO>> GetMyElectricDetailAsync(Guid userId, bool? status)
+        {
+            var query = from reading in dbContext.ElectricReadings
+                        join bill in dbContext.ElectricBills
+                            on reading.Id equals bill.ReadingId 
+                        join meter in dbContext.ElectricMeters
+                            on reading.ElectricMetersId equals meter.Id
+                        join apartment in dbContext.Apartments
+                            on meter.ApartmentId equals apartment.Id
+                        join user in dbContext.Users
+                            on apartment.UserId equals user.Id
+                        where bill.CustomerId == userId
+                        select new MyElectricDetailDTO
+                        {
+                            FullName = user.FullName,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
+                            ApartmentNumber = apartment.ApartmentNumber,
+                            MeterNumber = meter.MeterNumber,
+                            consumption = reading.Consumption,
+                            pre_electric_number = reading.PreElectricNumber,
+                            current_electric_number = reading.CurrentElectricNumber,
+                            readingDate = reading.ReadingDate,
+                            price = bill.TotalAmount,
+                            status = bill.Status
+                        };
+            if (status.HasValue)
+            {
+                if (status.Value)
+                {
+                    query = query.Where(x => x.status == "completed");
+                }
+                else
+                {
+                    query = query.Where(x => x.status != "completed");
+                }
+            }
+
+            var result = await query.ToListAsync();
+            return result;
         }
     }
 }
