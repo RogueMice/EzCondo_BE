@@ -9,13 +9,19 @@ namespace EzConDo_Service.SignalR_Integration
 {
     public class NotificationHub: Hub
     {
-        public async Task JoinNotificationGroup()
+        public async Task JoinGroup(string groupName)
         {
-            var userId = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId != null)
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        }
+        public override async Task OnConnectedAsync()
+        {
+            var userRole = Context.User?.FindFirst(ClaimTypes.Role)?.Value?.ToLower();
+            if (userRole == "manager")
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                await Groups.AddToGroupAsync(Context.ConnectionId, "Managers");
+                Console.WriteLine($"Kết nối {Context.ConnectionId} của Manager đã được thêm vào group Managers.");
             }
+            await base.OnConnectedAsync();
         }
     }
 }

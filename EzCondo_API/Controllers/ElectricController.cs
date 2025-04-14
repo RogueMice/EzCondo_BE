@@ -8,34 +8,49 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = "Manager")]
     public class ElectricController : ControllerBase
     {
-        private readonly IElectricMeterService meterService;
+        private readonly IElectricService electricService;
 
-        public ElectricController(IElectricMeterService meterService)
+        public ElectricController(IElectricService electricService)
         {
-            this.meterService = meterService;
+            this.electricService = electricService;
         }
 
         [HttpGet("Get-All-Electric-Metters")]
         public async Task<IActionResult> GetAllElectricMetters()
         {
-            var electricMetter = await meterService.GetAllElectricMettersAsync();
+            var electricMetter = await electricService.GetAllElectricMettersAsync();
             return Ok(electricMetter);
         }
 
         [HttpGet("Get-All-Electric-Readings")]
         public async Task<IActionResult> GetAllElectricReadings()
         {
-            var electricReading = await meterService.GetAllElectricReadingsAsync();
+            var electricReading = await electricService.GetAllElectricReadingsAsync();
             return Ok(electricReading);
         }
 
-        [Authorize(Policy = "Manager")]
+        [HttpGet("Get-All-Electric")]
+        public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day = 30)
+        {
+            var electric = await electricService.GetAllElectricAsync(status,day);
+            return Ok(electric);
+        }
+
+
+        [HttpGet("Get-Electric-Detail")]
+        public async Task<IActionResult> GetElectricDetail([FromQuery] Guid electricId)
+        {
+            var electricDetail = await electricService.GetElectricDetailAsync(electricId);
+            return Ok(electricDetail);
+        }
+
         [HttpPost("Add-Electric-Metters")]
         public async Task<IActionResult> AddElectricMetters( IFormFile file)
         {
-            var electricMetter = await meterService.AddElectricMettersAsync(file);
+            var electricMetter = await electricService.AddElectricMettersAsync(file);
             if (electricMetter == null)
             {
                 return BadRequest("Don't have any data imported !");
@@ -47,11 +62,10 @@ namespace EzCondo_API.Controllers
             });
         }
 
-        [Authorize(Policy = "AdminOrManager")]
         [HttpPost("Add-Electric-Readings")]
         public async Task<IActionResult> AddElectricReadings(IFormFile file)
         {
-            var electricReading = await meterService.AddElectricReadingAsync(file);
+            var electricReading = await electricService.AddElectricReadingAsync(file);
             if (electricReading == null)
             {
                 return BadRequest("Don't have any data imported !");

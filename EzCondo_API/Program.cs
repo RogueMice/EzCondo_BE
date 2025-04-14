@@ -18,6 +18,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using EzConDo_Service.FirebaseIntegration;
 using EzCondo_Data.Domain;
+using EzConDo_Service.SignalR_Integration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,7 +137,7 @@ builder.Services.AddScoped<IApartmentService, ApartmentService>();
 builder.Services.AddScoped<INotificationImageService, NotificationImageService>();
 builder.Services.AddScoped<I_incidentService, IncidentService>();
 builder.Services.AddScoped<I_IncidentImage, IncidentImageService>();
-builder.Services.AddScoped<IElectricMeterService, ElectricMetterService>();
+builder.Services.AddScoped<IElectricService, ElectricService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -169,6 +170,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+//Use Hub
+app.MapHub<NotificationHub>("/notificationHub");
 
 //Declare Authen
 app.UseAuthentication();

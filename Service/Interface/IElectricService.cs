@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace EzConDo_Service.Interface
 {
-    public interface IElectricMeterService
+    public interface IElectricService
     {
         Task<List<ElectricMetterDTO>> AddElectricMettersAsync(IFormFile file);
 
@@ -19,6 +19,8 @@ namespace EzConDo_Service.Interface
 
         Task<List<ElectricReadingDTO>> GetAllElectricReadingsAsync();
 
+        Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day = 30);
 
+        Task<ElectricDetailDTO> GetElectricDetailAsync(Guid electricReadingId);
     }
 }

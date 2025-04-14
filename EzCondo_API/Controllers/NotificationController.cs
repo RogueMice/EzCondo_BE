@@ -14,16 +14,17 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService notificationService;
         private readonly INotificationImageService imageService;
+        private readonly IHubContext<NotificationHub> hubContext;
 
-        public NotificationController(INotificationService notificationService, INotificationImageService imageService)
+        public NotificationController(INotificationService notificationService, INotificationImageService imageService, IHubContext<NotificationHub> hubContext)
         {
             this.notificationService = notificationService;
             this.imageService = imageService;
+            this.hubContext = hubContext;
         }
 
         [HttpGet("user-get-notifications")]
@@ -99,6 +100,28 @@ namespace EzCondo_API.Controllers
             if (result == null)
                 return BadRequest();
             return Ok(result);
+        }
+
+        [HttpGet("test")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TestSignalR()
+        {
+            var testData = new
+            {
+                Message = "Test thông báo cho Managers",
+                Time = DateTime.UtcNow
+            };
+
+            try
+            {
+                await hubContext.Clients.Group("Managers")
+                        .SendAsync("NotificationReceived", testData);
+                return Ok("Test gửi thông báo thành công!");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}");
+            }
         }
     }
 }

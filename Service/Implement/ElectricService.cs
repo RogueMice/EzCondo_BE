@@ -14,11 +14,11 @@ using static EzConDo_Service.ExceptionsConfig.CustomException;
 
 namespace EzConDo_Service.Implement
 {
-    public class ElectricMetterService : IElectricMeterService
+    public class ElectricService : IElectricService
     {
         private readonly ApartmentDbContext dbContext;
 
-        public ElectricMetterService(ApartmentDbContext dbContext)
+        public ElectricService(ApartmentDbContext dbContext)
         {
             this.dbContext = dbContext;
         }
@@ -211,6 +211,97 @@ namespace EzConDo_Service.Implement
                 })
                 .ToListAsync();
             return electricReadings;
+        }
+
+        public async Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day = 30)
+        {
+            var fromDate = DateTime.Now.AddDays(-day ?? 30);
+
+            var query = from reading in dbContext.ElectricReadings
+                        join bill in dbContext.ElectricBills
+                            on reading.Id equals bill.ReadingId into billGroup
+                        from electricBill in billGroup.DefaultIfEmpty() // LEFT JOIN
+                        join meter in dbContext.ElectricMeters
+                            on reading.ElectricMetersId equals meter.Id
+                        join apartment in dbContext.Apartments
+                            on meter.ApartmentId equals apartment.Id
+                        join user in dbContext.Users
+                            on apartment.UserId equals user.Id
+                        where electricBill == null || electricBill.CreateDate >= fromDate
+                        select new ElectricViewDTO
+                        {
+                            ElectricReadingId = reading.Id,
+                            FullName = user.FullName,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
+                            ApartmentNumber = apartment.ApartmentNumber,
+                            Consumption = reading.Consumption,
+                            ReadingDate = reading.ReadingDate,
+                            status = electricBill != null ? electricBill.Status : "null"
+                        };
+
+            if (status.HasValue)
+            {
+                if (status.Value)
+                {
+                    query = query.Where(x => x.status == "completed" || x.status == "pending");
+                }
+                else
+                {
+                    query = query.Where(x => x.status != "completed" && x.status != "pending");
+                }
+            }
+
+            var result = await query.ToListAsync();
+            return result;
+        }
+
+        public async Task<ElectricDetailDTO> GetElectricDetailAsync(Guid electricReadingId)
+        {
+            var electricReading = await dbContext.ElectricReadings
+                                .Include(er => er.ElectricMeters)
+                                .ThenInclude(em => em.Apartment)
+                                .ThenInclude(a => a.User)
+                                .FirstOrDefaultAsync(er => er.Id == electricReadingId)
+                                ?? throw new NotFoundException($"ElectricReadingId {electricReadingId} is not found !");
+
+            var tiers = await dbContext.PriceElectricTiers
+                        .OrderBy(t => t.MinKWh)
+                        .ToListAsync();
+
+            decimal consumption = electricReading.Consumption;
+            decimal remaining = consumption;
+            decimal totalPrice = 0;
+
+            foreach (var tier in tiers)
+            {
+                decimal tierMin = tier.MinKWh;
+                decimal tierMax = tier.MaxKWh == 0 ? decimal.MaxValue : tier.MaxKWh;
+                decimal unitsInTier = Math.Min(remaining, tierMax - tierMin + 1);
+
+                if (consumption >= tierMin)
+                {
+                    totalPrice += unitsInTier * tier.PricePerKWh;
+                    remaining -= unitsInTier;
+                }
+
+                if (remaining <= 0)
+                    break;
+            }
+
+            return new ElectricDetailDTO
+            {
+                FullName = electricReading.ElectricMeters.Apartment.User.FullName,
+                PhoneNumber = electricReading.ElectricMeters.Apartment.User.PhoneNumber,
+                Email = electricReading.ElectricMeters.Apartment.User.Email,
+                ApartmentNumber = electricReading.ElectricMeters.Apartment.ApartmentNumber,
+                MeterNumber = electricReading.ElectricMeters.MeterNumber,
+                consumption = electricReading.Consumption,
+                readingDate = electricReading.ReadingDate,
+                pre_electric_number = electricReading.PreElectricNumber,
+                current_electric_number = electricReading.CurrentElectricNumber,
+                price = totalPrice
+            };
         }
     }
 }

@@ -102,11 +102,25 @@ namespace EzConDo_Service.Implement
             if (deviceTokens.Any())
             {
                 await firebasePush.SendPushNotificationAsync(
-                    notification.Title,
-                    notification.Content,
-                    deviceTokens
-                );
+                                        notification.Title,
+                                        notification.Content,
+                                        deviceTokens);
             }
+
+            ////Send notification real-time to manager
+            //var notificationData = new
+            //{
+            //    Id = notification.Id,
+            //    Title = notification.Title,
+            //    Content = notification.Content,
+            //    Type = notification.Type,
+            //    CreatedAt = notification.CreatedAt,
+            //    IsRead = false,
+            //    Receiver = notificationReceiver
+            //};
+
+            //await hubContext.Clients.Group("Managers")
+            //  .SendAsync("NotificationReceived", notificationData);
 
             return notification.Id;
         }
@@ -115,7 +129,7 @@ namespace EzConDo_Service.Implement
         {
             IQueryable<NotificationReceiver> query = dbContext.NotificationReceivers
                                                     .Include(nr => nr.Notification)
-                                                    .Where(nr => nr.UserId == userId) 
+                                                    .Where(nr => nr.UserId == userId)
                                                     .OrderByDescending(nr => nr.Notification.CreatedAt);
             if (!string.IsNullOrEmpty(type))
             {
@@ -154,7 +168,7 @@ namespace EzConDo_Service.Implement
         public async Task<NotificationViewListDTO> AdminGetNotificationsAsync(int page, int pageSize, int? day, string? receiver, string? type)
         {
             var query = from n in dbContext.Notifications
-                        join nr in dbContext.NotificationReceivers 
+                        join nr in dbContext.NotificationReceivers
                         on n.Id equals nr.NotificationId
                         select new
                         {
@@ -242,7 +256,7 @@ namespace EzConDo_Service.Implement
 
         public async Task<Guid?> CreateNotificationToUserAsync(SendNotificationToUserDTO notificationDTO, Guid userId)
         {
-            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == notificationDTO.ApartmentNumber && a.UserId != null) 
+            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == notificationDTO.ApartmentNumber && a.UserId != null)
                 ?? throw new NotFoundException($"Apartment Number {notificationDTO.ApartmentNumber} is not found or have no users!");
 
             var notification = new Notification
