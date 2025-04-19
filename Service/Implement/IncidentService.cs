@@ -2,8 +2,11 @@
 using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using EzConDo_Service.SignalR_Integration;
 using FirebaseAdmin.Auth;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +19,12 @@ namespace EzConDo_Service.Implement
     public class IncidentService : I_incidentService
     {
         private readonly ApartmentDbContext dbContext;
+        private readonly NotificationHub notificationHub;
 
-        public IncidentService(ApartmentDbContext dbContext)
+        public IncidentService(ApartmentDbContext dbContext, NotificationHub notificationHub)
         {
             this.dbContext = dbContext;
+            this.notificationHub = notificationHub;
         }
         public async Task<Guid?> AddAsync(IncidentDTO dto, Guid userId)
         {
@@ -66,13 +71,28 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 Title = $"New incident reported {dto.Title}",
                 Content = $"A new incident has been reported by {userId}.",
-                Type = "incident",
+                Type = "Noti",
                 CreatedBy = userId,
                 CreatedAt = DateTime.UtcNow,
                 Receiver = "manager"
             };
+            //Send notification to managers use real-time SignalR but not wait for response
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // send real-time
+                    await notificationHub
+                        .Clients.Group("Managers")
+                        .SendAsync("ReceiveNotification", notification);
 
-            await CreateNotificationAsync(notification,userId);
+                    await CreateNotificationAsync(notification, userId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: " + ex);
+                }
+            });
 
             return incident.Id;
         }
@@ -170,21 +190,25 @@ namespace EzConDo_Service.Implement
             return incident;
         }
 
-        public Task<List<IncidentDTO>> GetIncidentsAsync()
+        public async Task<List<GetIncidentDTO>> GetIncidentsAsync()
         {
-            var incidents = dbContext.Incidents.AsNoTracking()
+            var incidents = await dbContext.Incidents.AsNoTracking()
                 .OrderBy(i => i.Priority) //sort priority increase
-                .Select(i => new IncidentDTO
-            {
-                Id = i.Id,
-                Title = i.Title,
-                Description = i.Description,
-                Type = i.Type,
-                Priority = i.Priority,
-                ReportedAt = i.ReportedAt,
-                Status = i.Status,
-                UserId = i.UserId
-            }).ToListAsync();
+                .Select(i => new GetIncidentDTO
+                {
+                    Id = i.Id,
+                    Title = i.Title,
+                    Description = i.Description,
+                    Type = i.Type,
+                    Priority = i.Priority,
+                    ReportedAt = i.ReportedAt,
+                    Status = i.Status,
+                    UserId = i.UserId,
+                    FullName = dbContext.Users
+                        .Where(x => x.Id == i.UserId)
+                        .Select(x => x.FullName)
+                        .FirstOrDefault()
+                }).ToListAsync();
             return incidents;
         }
     }

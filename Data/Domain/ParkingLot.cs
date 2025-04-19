@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class ParkingLot
 {
     public Guid Id { get; set; }
 
-    public string Spot { get; set; } = null!;
+    public string Type { get; set; } = null!;
 
-    public Guid ServiceId { get; set; }
+    public string Status { get; set; } = null!;
+
+    public bool Checking { get; set; }
 
     public Guid? UserId { get; set; }
-
-    public virtual Service Service { get; set; } = null!;
 
     public virtual User? User { get; set; }
 }

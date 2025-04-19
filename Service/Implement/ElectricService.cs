@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Http;
@@ -83,15 +84,15 @@ namespace EzConDo_Service.Implement
                         Id = id,
                         MeterNumber = meterNumber,
                         InstallationDate = installationDate,
-                        ApartmentId = apartment.Id
+                        ApartmentId = apartment.Id,
+                        ApartmentNumber = apartment.ApartmentNumber
                     };
 
                     // Check exist
-                    var existingMeter = await dbContext.ElectricMeters
-                        .FirstOrDefaultAsync(em => em.MeterNumber == dto.MeterNumber);
-                    if (existingMeter != null)
+                    var existingMeterOrAparmentId = await dbContext.ElectricMeters
+                        .FirstOrDefaultAsync(em => em.MeterNumber == dto.MeterNumber || em.ApartmentId == dto.ApartmentId);
+                    if (existingMeterOrAparmentId != null)
                     {
-                        // Ví dụ: nếu tồn tại bỏ qua và tiếp tục đọc dòng tiếp theo.
                         continue;
                     }
 
@@ -141,8 +142,7 @@ namespace EzConDo_Service.Implement
                     //Check apartment use by user
                     var apartment = await dbContext.Apartments.
                         FirstOrDefaultAsync(a => a.Id == electricMeter.ApartmentId && a.UserId != null)
-                        ?? throw new ConflictException($"Apartment id: {electricMeter.ApartmentId} have no users!");
-
+                        ?? throw new ConflictException($"Apartment of Metter number: {electricMeter.MeterNumber} have no users!");
 
                     if (!decimal.TryParse(currentElectricStr, out var currentElectricNumber))
                         throw new Exception($"Invalid number format at row {row.RowNumber()}");
@@ -205,7 +205,8 @@ namespace EzConDo_Service.Implement
                     Id = em.Id,
                     MeterNumber = em.MeterNumber,
                     InstallationDate = em.InstallationDate,
-                    ApartmentId = em.ApartmentId
+                    ApartmentId = em.ApartmentId,
+                    ApartmentNumber = em.Apartment.ApartmentNumber // Added to return apartment number
                 })
                 .ToListAsync();
             return electricMetters;
@@ -406,6 +407,53 @@ namespace EzConDo_Service.Implement
 
             var result = await query.ToListAsync();
             return result;
+        }
+
+        public Task<byte[]> CreateTemplateElectricMetterAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Template");
+
+            // Header row
+            worksheet.Cell(1, 1).Value = "Id";
+            worksheet.Cell(1, 2).Value = "MeterNumber";
+            worksheet.Cell(1, 3).Value = "InstallationDate (yyyy-MM-dd)";
+            worksheet.Cell(1, 4).Value = "ApartmentNumber";
+
+            // Format header
+            var headerRange = worksheet.Range(1, 1, 1, 4);
+            headerRange.Style.Font.Bold = true;
+            worksheet.SheetView.FreezeRows(1);
+
+            // Optionally set column widths
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return Task.FromResult(stream.ToArray());
+        }
+
+        public Task<byte[]> CreateTemplateElectricReadingAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Template");
+
+            // Header row
+            worksheet.Cell(1, 1).Value = "Id";
+            worksheet.Cell(1, 2).Value = "Metter Number";
+            worksheet.Cell(1, 3).Value = "Current Electric Number";
+
+            // Format header
+            var headerRange = worksheet.Range(1, 1, 1, 3);
+            headerRange.Style.Font.Bold = true;
+            worksheet.SheetView.FreezeRows(1);
+
+            // Optionally set column widths
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return Task.FromResult(stream.ToArray());
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class ServiceImage
 {

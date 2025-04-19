@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class HouseHoldMember
 {
@@ -18,7 +17,7 @@ public partial class HouseHoldMember
 
     public string PhoneNumber { get; set; } = null!;
 
-    public string? Relationship { get; set; }
+    public string Relationship { get; set; } = null!;
 
     public Guid UserId { get; set; }
 

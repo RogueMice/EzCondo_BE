@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace EzCondo_Data.Domain;
 
-
 public partial class Notification
 {
     public Guid Id { get; set; }

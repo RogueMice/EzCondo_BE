@@ -1,4 +1,5 @@
 ﻿using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,7 @@ namespace EzConDo_Service.Implement
 
                 userDevice = new UserDevice
                 {
+                    Id = Guid.NewGuid(),
                     FcmToken = dto.FcmToken,
                     Type = dto.Type,
                     IsActive = dto.IsActive ?? true,

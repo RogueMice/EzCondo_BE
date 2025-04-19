@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Domain;
 
-namespace EzCondo_Data.Context;
+namespace EzCondo_Data.Domain;
 
 public partial class UserDevice
 {
+    public Guid Id { get; set; }
+
     public string FcmToken { get; set; } = null!;
 
     public string Type { get; set; } = null!;

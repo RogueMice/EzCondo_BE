@@ -27,9 +27,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .AllowAnyOrigin()  
-            .AllowAnyHeader()   
-            .AllowAnyMethod();  
+            .WithOrigins("http://localhost:3000","http://localhost:7254") // Specify allowed origins
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // Allow credentials
     });
 });
 
@@ -67,6 +68,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                // Nếu request là đến hub
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/notificationHub")) // <-- đúng đường dẫn hub
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
             // error 401
             OnChallenge = context =>
             {
@@ -151,6 +166,9 @@ builder.Services.AddMemoryCache();
 //Add SignalR
 builder.Services.AddSignalR();
 
+// Register NotificationHub
+builder.Services.AddSingleton<NotificationHub>();
+
 // Create Firebase
 FirebaseApp.Create(new AppOptions()
 {
@@ -166,18 +184,19 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
 
-//Use Hub
-
-app.MapHub<NotificationHub>("/notificationHub");
 
 //Declare Authen
 app.UseAuthentication();
 app.UseAuthorization();
+
+//Use Hub
+
+app.MapHub<NotificationHub>("/notificationHub");
 
 
 app.UseMiddleware<GlobalExceptionMiddleware>();

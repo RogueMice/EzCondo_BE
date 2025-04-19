@@ -13,7 +13,7 @@ namespace EzConDo_Service.Interface
 
         Task<string> EditAsync(UpdateIncidentDTO dto);
 
-        Task<List<IncidentDTO>> GetIncidentsAsync();
+        Task<List<GetIncidentDTO>> GetIncidentsAsync();
 
         Task<IncidentDTO> GetIncidentByUserIdAsync(Guid userId);
     }

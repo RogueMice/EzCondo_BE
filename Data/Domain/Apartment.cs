@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using EzCondo_Data.Context;
 
 namespace EzCondo_Data.Domain;
 
@@ -18,7 +17,7 @@ public partial class Apartment
 
     public Guid? UserId { get; set; }
 
-    public virtual ICollection<ElectricMeter> ElectricMeters { get; set; } = new List<ElectricMeter>();
+    public virtual ElectricMeter? ElectricMeter { get; set; }
 
     public virtual User? User { get; set; }
 

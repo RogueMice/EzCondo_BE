@@ -1,4 +1,5 @@
 ﻿using EzCondo_Data.Context;
+using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
 using System;
 using System.Collections.Generic;

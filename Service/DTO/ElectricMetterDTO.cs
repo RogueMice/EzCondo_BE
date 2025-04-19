@@ -15,5 +15,7 @@ namespace EzConDo_Service.DTO
         public DateOnly InstallationDate { get; set; }
 
         public Guid ApartmentId { get; set; }
+
+        public string? ApartmentNumber { get; set; }
     }
 }

@@ -26,5 +26,9 @@ namespace EzConDo_Service.Interface
         Task<List<MyElectricDetailDTO>> GetMyElectricDetailAsync(Guid userId, bool? status);
 
         Task<Guid?> AddElectricBillAsync(Guid electricReadingId);
+
+        Task<byte[]> CreateTemplateElectricMetterAsync();
+
+        Task<byte[]> CreateTemplateElectricReadingAsync();
     }
 }

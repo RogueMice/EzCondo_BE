@@ -19,7 +19,7 @@ namespace EzConDo_Service.Implement
 
         public async Task<Guid> AddOrUpdateServiceAsync(AddServiceDTO serviceDTO)
         {
-            var service = await dbContext.Services.FirstOrDefaultAsync(x => x.Id == serviceDTO.Id) ?? new EzCondo_Data.Context.Service();
+            var service = await dbContext.Services.FirstOrDefaultAsync(x => x.Id == serviceDTO.Id) ?? new EzCondo_Data.Domain.Service();
             //add new
             if (service.Id == Guid.Empty)
             {

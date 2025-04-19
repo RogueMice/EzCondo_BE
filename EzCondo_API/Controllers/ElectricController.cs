@@ -1,4 +1,5 @@
 ﻿using EzConDo_Service.DTO;
+using EzConDo_Service.Implement;
 using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -40,7 +41,6 @@ namespace EzCondo_API.Controllers
             return Ok(electric);
         }
 
-
         [HttpGet("Get-Electric-Detail")]
         public async Task<IActionResult> GetElectricDetail([FromQuery] Guid electricId)
         {
@@ -48,7 +48,6 @@ namespace EzCondo_API.Controllers
             return Ok(electricDetail);
         }
 
-        [AllowAnonymous]
         [HttpGet("Get-My-Electric-Detail")]
         public async Task<IActionResult> GetMyElectricDetail([FromQuery] bool? status)
         {
@@ -60,6 +59,23 @@ namespace EzCondo_API.Controllers
             return Ok(electricDetail);
         }
 
+        [HttpGet("Download-Template-Electric-Metter")]
+        public async Task<IActionResult> CreateTemplateElectricMeter()
+        {
+            var content = await electricService.CreateTemplateElectricMetterAsync();
+            return File(content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "ElectricMetersTemplate.xlsx");
+        }
+
+        [HttpGet("Download-Template-Electric-Reading")]
+        public async Task<IActionResult> CreateTemplateElectricReading()
+        {
+            var content = await electricService.CreateTemplateElectricReadingAsync();
+            return File(content,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "ElectricReadingsTemplate.xlsx");
+        }
         [HttpPost("Add-Electric-Metters")]
         public async Task<IActionResult> AddElectricMetters( IFormFile file)
         {
