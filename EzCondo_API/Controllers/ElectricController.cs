@@ -10,7 +10,7 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "Manager")]
+    [Authorize]
     public class ElectricController : ControllerBase
     {
         private readonly IElectricService electricService;
@@ -20,6 +20,7 @@ namespace EzCondo_API.Controllers
             this.electricService = electricService;
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Electric-Metters")]
         public async Task<IActionResult> GetAllElectricMetters()
         {
@@ -27,6 +28,8 @@ namespace EzCondo_API.Controllers
             return Ok(electricMetter);
         }
 
+
+        [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Electric-Readings")]
         public async Task<IActionResult> GetAllElectricReadings()
         {
@@ -34,6 +37,7 @@ namespace EzCondo_API.Controllers
             return Ok(electricReading);
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Electric")]
         public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day = 30)
         {
@@ -41,6 +45,7 @@ namespace EzCondo_API.Controllers
             return Ok(electric);
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpGet("Get-Electric-Detail")]
         public async Task<IActionResult> GetElectricDetail([FromQuery] Guid electricId)
         {
@@ -59,6 +64,7 @@ namespace EzCondo_API.Controllers
             return Ok(electricDetail);
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpGet("Download-Template-Electric-Metter")]
         public async Task<IActionResult> CreateTemplateElectricMeter()
         {
@@ -68,6 +74,7 @@ namespace EzCondo_API.Controllers
                         "ElectricMetersTemplate.xlsx");
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpGet("Download-Template-Electric-Reading")]
         public async Task<IActionResult> CreateTemplateElectricReading()
         {
@@ -76,6 +83,8 @@ namespace EzCondo_API.Controllers
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         "ElectricReadingsTemplate.xlsx");
         }
+
+        [Authorize(Policy = "Manager")]
         [HttpPost("Add-Electric-Metters")]
         public async Task<IActionResult> AddElectricMetters( IFormFile file)
         {
@@ -91,6 +100,7 @@ namespace EzCondo_API.Controllers
             });
         }
 
+        [Authorize(Policy = "Manager")]
         [HttpPost("Add-Electric-Readings")]
         public async Task<IActionResult> AddElectricReadings(IFormFile file)
         {

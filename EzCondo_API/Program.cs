@@ -153,6 +153,7 @@ builder.Services.AddScoped<INotificationImageService, NotificationImageService>(
 builder.Services.AddScoped<I_incidentService, IncidentService>();
 builder.Services.AddScoped<I_IncidentImage, IncidentImageService>();
 builder.Services.AddScoped<IElectricService, ElectricService>();
+builder.Services.AddScoped<IWaterService, WaterService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
