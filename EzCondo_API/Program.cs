@@ -19,6 +19,7 @@ using Google.Apis.Auth.OAuth2;
 using EzConDo_Service.FirebaseIntegration;
 using EzCondo_Data.Domain;
 using EzConDo_Service.SignalR_Integration;
+using EzCondo_Data.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -82,7 +83,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 return Task.CompletedTask;
             },
-            // error 401
+            //Validate TokenVersion 
+            OnTokenValidated = async context =>
+            {
+                var claimsIdentity = context.Principal.Identity as ClaimsIdentity;
+                var userId = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var tokenVersionFromToken = claimsIdentity?.FindFirst("TokenVersion")?.Value;
+
+                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(tokenVersionFromToken))
+                {
+                    context.Fail("Token is invalid or malformed");
+                    return;
+                }
+
+                var dbContext = context.HttpContext.RequestServices.GetRequiredService<ApartmentDbContext>();
+                var user = await dbContext.Users.FindAsync(Guid.Parse(userId));
+
+                if (user == null || user.TokenVersion.ToString() != tokenVersionFromToken)
+                {
+                    context.Fail("TokenVersion mismatch");
+                }
+            },
+            //error 401
             OnChallenge = context =>
             {
                 context.HandleResponse();
@@ -90,10 +112,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
 
+                var failureMessage = context.AuthenticateFailure?.Message;
+
+                var message = failureMessage != null && failureMessage.Contains("TokenVersion mismatch")
+                                                ? "Token is invalid or expired!"
+                                                : "You need to login to use this resource!";
+
                 var json = JsonConvert.SerializeObject(new
                 {
                     status = 401,
-                    message = "You need to login to use this resource!"
+                    message = message
                 });
                 return context.Response.WriteAsync(json);
             },

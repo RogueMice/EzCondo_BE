@@ -25,5 +25,7 @@ namespace EzConDo_Service.DTO
         public string Status { get; set; } = null!;
 
         public string RoleName { get; set; } = null!;
+
+        public Guid TokenVersion { get; set; }
     }
 }

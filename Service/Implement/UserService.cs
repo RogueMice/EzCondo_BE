@@ -50,19 +50,21 @@ namespace Service.Service
         public async Task<UserViewDTO> ValidateUserAsync(LoginDTO dto)
         {
             var user = await dbContext.Users
-                 .AsNoTracking()
-                 .Include(u => u.Role)
-                 .Include(u => u.Apartments)
-                 .SingleOrDefaultAsync(u => u.Email == dto.Email)
-                 ?? throw new NotFoundException("User is not found ! ");
-            if (user.Status.ToLower() == "inactive")
-            {
-                throw new LockedException("Your account is blocked ! ");
-            }
+                .SingleOrDefaultAsync(u => u.Email == dto.Email)
+                ?? throw new NotFoundException("User not found.");
 
-            var result = passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password);
-            if (result != PasswordVerificationResult.Success)
+            if (user.Status.Equals("inactive", StringComparison.OrdinalIgnoreCase))
+                throw new LockedException("Account blocked.");
+
+            if (passwordHasher.VerifyHashedPassword(user, user.Password, dto.Password)
+                != PasswordVerificationResult.Success)
                 return null;
+
+            await dbContext.Entry(user).Reference(u => u.Role).LoadAsync();
+            await dbContext.Entry(user).Collection(u => u.Apartments).LoadAsync();
+
+            user.TokenVersion = Guid.NewGuid();
+            await dbContext.SaveChangesAsync(); 
 
             return new UserViewDTO
             {
@@ -70,11 +72,12 @@ namespace Service.Service
                 FullName = user.FullName,
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
-                ApartmentNumber = user.Apartments?.FirstOrDefault()?.ApartmentNumber ?? string.Empty,
+                ApartmentNumber = user.Apartments.FirstOrDefault()?.ApartmentNumber ?? string.Empty,
                 PhoneNumber = user.PhoneNumber,
                 Email = user.Email,
                 Status = user.Status,
-                RoleName = user.Role.Name
+                RoleName = user.Role.Name,
+                TokenVersion = user.TokenVersion.Value // Non-null after assignment
             };
         }
 
