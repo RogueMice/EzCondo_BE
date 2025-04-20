@@ -8,6 +8,8 @@ namespace EzConDo_Service.DTO
 {
     public class WaterViewDTO
     {
+        public Guid Id { get; set; }
+
         public string FullName { get; set; }
 
         public string PhoneNumber { get; set; }

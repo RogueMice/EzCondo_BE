@@ -325,6 +325,7 @@ namespace EzConDo_Service.Implement
                         where waterBill == null || waterBill.CreateDate >= fromDate
                         select new WaterViewDTO
                         {
+                            Id = reading.Id,
                             FullName = user.FullName,
                             PhoneNumber = user.PhoneNumber,
                             Email = user.Email,
