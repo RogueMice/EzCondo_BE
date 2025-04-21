@@ -99,38 +99,16 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Manager")]
         [HttpPost("manager-send-to-user")]
-        public async Task<IActionResult> SendNotificationToUser([FromBody] SendNotificationToUserDTO dto)
+        public async Task<IActionResult> SendNotificationToUser([FromBody] List<SendNotificationToUserDTO> dto)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)
                 return Unauthorized();
             Guid.TryParse(userId, out var user_Id);
-            var result = await notificationService.CreateNotificationToUserAsync(dto, user_Id);
+            var result = await notificationService.CreateNotificationsToUsersAsync(dto, user_Id);
             if (result == null)
                 return BadRequest();
             return Ok(result);
-        }
-
-        [HttpGet("test")]
-        [AllowAnonymous]
-        public async Task<IActionResult> TestSignalR()
-        {
-            var testData = new
-            {
-                Message = "Test thông báo cho Managers",
-                Time = DateTime.UtcNow
-            };
-
-            try
-            {
-                await hubContext.Clients.Group("Managers")
-                        .SendAsync("NotificationReceived", testData);
-                return Ok("Test gửi thông báo thành công!");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error: {ex.Message}");
-            }
         }
     }
 }

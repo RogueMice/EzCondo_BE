@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EzConDo_Service.DTO;
+using Microsoft.AspNetCore.Http;
 
 namespace EzConDo_Service.Interface
 {

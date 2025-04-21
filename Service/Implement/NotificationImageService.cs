@@ -8,6 +8,7 @@ using EzCondo_Data.Domain;
 using EzConDo_Service.CloudinaryIntegration;
 using EzConDo_Service.DTO;
 using EzConDo_Service.Interface;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using static EzConDo_Service.ExceptionsConfig.CustomException;
 
@@ -23,6 +24,7 @@ namespace EzConDo_Service.Implement
             this.dbContext = dbContext;
             this.cloudinaryService = cloudinaryService;
         }
+
         public async Task<string?> CreateNotificationImageAsync(NotificationImageDTO dto)
         {
             bool notificationImage = await dbContext.Notifications.AnyAsync(n => n.Id == dto.NotificationId);

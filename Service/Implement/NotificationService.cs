@@ -254,62 +254,80 @@ namespace EzConDo_Service.Implement
             return "Mark as read successfull!";
         }
 
-        public async Task<Guid?> CreateNotificationToUserAsync(SendNotificationToUserDTO notificationDTO, Guid userId)
+        public async Task<List<Guid>> CreateNotificationsToUsersAsync(List<SendNotificationToUserDTO> notificationDTOs, Guid createdByUserId)
         {
-            var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == notificationDTO.ApartmentNumber && a.UserId != null)
-                ?? throw new NotFoundException($"Apartment Number {notificationDTO.ApartmentNumber} is not found or have no users!");
+            var notificationIds = new List<Guid>();
+            var targetUserIds = new List<Guid>();
 
-            var notification = new Notification
-            {
-                Id = Guid.NewGuid(),
-                Title = notificationDTO.Title,
-                Content = notificationDTO.Content,
-                Type = notificationDTO.Type,
-                CreatedBy = userId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var receivers = new NotificationReceiver
-            {
-                Id = Guid.NewGuid(),
-                NotificationId = notification.Id,
-                UserId = apartment.UserId.Value,
-                Receiver = "resident",
-                IsRead = false,
-                ReadAt = null
-            };
-
-            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+            await using var tx = await dbContext.Database.BeginTransactionAsync();
 
             try
             {
-                dbContext.Notifications.Add(notification);
-                dbContext.NotificationReceivers.Add(receivers);
+                foreach (var dto in notificationDTOs)
+                {
+                    var apartment = await dbContext.Apartments
+                        .FirstOrDefaultAsync(a =>
+                            a.ApartmentNumber == dto.ApartmentNumber &&
+                            a.UserId != null)
+                        ?? throw new NotFoundException(
+                            $"Apartment {dto.ApartmentNumber} not found or has no resident.");
 
-                await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
+                    var userId = apartment.UserId.Value;
+                    targetUserIds.Add(userId);
+
+                    //create notification
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = dto.Title,
+                        Content = dto.Content,
+                        Type = dto.Type,
+                        CreatedBy = createdByUserId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    dbContext.Notifications.Add(notification);
+
+                    // create receiver
+                    var receiver = new NotificationReceiver
+                    {
+                        Id = Guid.NewGuid(),
+                        NotificationId = notification.Id,
+                        UserId = userId,
+                        Receiver = "resident",
+                        IsRead = false,
+                        ReadAt = null
+                    };
+                    await dbContext.NotificationReceivers.AddAsync(receiver);
+
+                    notificationIds.Add(notification.Id);
+                }
+
+                await dbContext.SaveChangesAsync();
+                await tx.CommitAsync();
             }
             catch
             {
-                await transaction.RollbackAsync().ConfigureAwait(false);
+                await tx.RollbackAsync();
                 throw;
             }
 
             var deviceTokens = await dbContext.UserDevices
-                .Where(ud => ud.UserId == apartment.UserId.Value && ud.IsActive)
+                .Where(ud => targetUserIds.Contains(ud.UserId) && ud.IsActive)
                 .Select(ud => ud.FcmToken)
                 .ToListAsync();
 
+            // send all notifications at once
             if (deviceTokens.Any())
             {
+                var lastDto = notificationDTOs.Last();
                 await firebasePush.SendPushNotificationAsync(
-                    notification.Title,
-                    notification.Content,
+                    lastDto.Title,
+                    lastDto.Content,
                     deviceTokens
                 );
             }
 
-            return notification.Id;
+            return notificationIds;
         }
     }
 }

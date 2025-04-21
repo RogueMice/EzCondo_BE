@@ -20,6 +20,7 @@ using EzConDo_Service.FirebaseIntegration;
 using EzCondo_Data.Domain;
 using EzConDo_Service.SignalR_Integration;
 using EzCondo_Data.Context;
+using EzConDo_Service.PayOsIntergration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,10 +74,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var accessToken = context.Request.Query["access_token"];
 
-                // Nếu request là đến hub
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
-                    path.StartsWithSegments("/notificationHub")) // <-- đúng đường dẫn hub
+                    path.StartsWithSegments("/notificationHub")) // <-- url hub need correct
                 {
                     context.Token = accessToken;
                 }
@@ -182,6 +182,8 @@ builder.Services.AddScoped<I_incidentService, IncidentService>();
 builder.Services.AddScoped<I_IncidentImage, IncidentImageService>();
 builder.Services.AddScoped<IElectricService, ElectricService>();
 builder.Services.AddScoped<IWaterService, WaterService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
@@ -203,6 +205,10 @@ FirebaseApp.Create(new AppOptions()
 {
     Credential = GoogleCredential.FromFile("D:\\Capstone2\\Firebase(Key)\\ezcondo-73fc4-firebase-adminsdk-fbsvc-e80056737f.json")
 });
+
+//Add PayOS
+builder.Services.Configure<PayQrSettings>(
+    builder.Configuration.GetSection("PayOsSettings"));
 
 var app = builder.Build();
 

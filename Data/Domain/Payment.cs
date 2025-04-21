@@ -17,7 +17,7 @@ public partial class Payment
 
     public decimal Amount { get; set; }
 
-    public string TransactionId { get; set; } = null!;
+    public string? TransactionId { get; set; } 
 
     public string Status { get; set; } = null!;
 
