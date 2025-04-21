@@ -31,7 +31,7 @@ namespace EzConDo_Service.Implement
             {
                 case "month":
                     dto.StartDate = DateTime.UtcNow;
-                    dto.EndDate = dto.StartDate?.AddMonths(1);
+                    dto.EndDate = dto.StartDate?.AddMonths((int)dto.TotalMonth);
                     break;
                 case "year":
                     dto.StartDate = DateTime.UtcNow;

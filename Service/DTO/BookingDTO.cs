@@ -20,6 +20,8 @@ namespace EzConDo_Service.DTO
 
         public string ForMonthOrYear { get; set; } = null!;
 
+        public int? TotalMonth { get; set; }
+
         public string? Status { get; set; } 
     }
 }
