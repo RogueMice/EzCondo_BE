@@ -61,7 +61,7 @@ namespace EzConDo_Service.Implement
                 Title = dto.Title,
                 Type = dto.Type
             };
-
+            
             dbContext.Add(incident);
             await dbContext.SaveChangesAsync();
 
@@ -76,7 +76,9 @@ namespace EzConDo_Service.Implement
                 CreatedAt = DateTime.UtcNow,
                 Receiver = "manager"
             };
+            await CreateNotificationAsync(notification, userId);
             //Send notification to managers use real-time SignalR but not wait for response
+
             _ = Task.Run(async () =>
             {
                 try
@@ -85,8 +87,6 @@ namespace EzConDo_Service.Implement
                     await notificationHub
                         .Clients.Group("Managers")
                         .SendAsync("ReceiveNotification", notification);
-
-                    await CreateNotificationAsync(notification, userId);
                 }
                 catch (Exception ex)
                 {

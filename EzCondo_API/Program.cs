@@ -210,6 +210,9 @@ FirebaseApp.Create(new AppOptions()
 builder.Services.Configure<PayQrSettings>(
     builder.Configuration.GetSection("PayOsSettings"));
 
+builder.Services.Configure<PayOsClientSettings>(
+    builder.Configuration.GetSection("PayOS"));
+
 var app = builder.Build();
 
 //use cors

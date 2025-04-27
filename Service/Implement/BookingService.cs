@@ -23,19 +23,17 @@ namespace EzConDo_Service.Implement
         }
         public async Task<Guid> AddBookingAsync(BookingDTO dto)
         {
-            // Check if Service exists
             bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == dto.ServiceId);
             if (!serviceExists)
                 throw new NotFoundException("Service not found.");
             switch(dto.ForMonthOrYear.ToLower())
             {
                 case "month":
-                    dto.StartDate = DateTime.UtcNow;
-                    dto.EndDate = dto.StartDate?.AddMonths((int)dto.TotalMonth);
+                    dto.EndDate = dto.StartDate.AddMonths((int)dto.TotalMonth);
                     break;
                 case "year":
                     dto.StartDate = DateTime.UtcNow;
-                    dto.EndDate = dto.StartDate?.AddYears(1);
+                    dto.EndDate = dto.StartDate.AddYears(1);
                     break;
                 default:
                     throw new BadRequestException("Invalid ForMonthOrYear value. It should be either 'month' or 'year'.");
