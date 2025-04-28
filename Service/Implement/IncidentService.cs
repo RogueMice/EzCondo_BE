@@ -193,8 +193,35 @@ namespace EzConDo_Service.Implement
 
         public async Task<List<GetIncidentDTO>> GetIncidentsAsync()
         {
-            var incidents = await dbContext.Incidents.AsNoTracking()
-                .OrderBy(i => i.Priority) //sort priority increase
+            var query = from i in dbContext.Incidents.AsNoTracking()
+                        join u in dbContext.Users.AsNoTracking()
+                            on i.UserId equals u.Id
+                        join a in dbContext.Apartments.AsNoTracking()
+                            on u.Id equals a.UserId into apts
+                        from apt in apts.DefaultIfEmpty()
+                        orderby i.Priority
+                        select new GetIncidentDTO
+                        {
+                            Id = i.Id,
+                            Title = i.Title,
+                            Description = i.Description,
+                            Type = i.Type,
+                            Priority = i.Priority,
+                            ReportedAt = i.ReportedAt,
+                            Status = i.Status,
+                            UserId = i.UserId,
+                            FullName = u.FullName,
+                            ApartmentNumber = apt.ApartmentNumber
+                        };
+
+            return await query.ToListAsync().ConfigureAwait(false);
+        }
+
+        public async Task<GetIncidentDTO> GetIncidentByIdAsync(Guid incidentId)
+        {
+            var incident = await dbContext.Incidents
+                .AsNoTracking()
+                .Where(i => i.Id == incidentId)
                 .Select(i => new GetIncidentDTO
                 {
                     Id = i.Id,
@@ -205,12 +232,15 @@ namespace EzConDo_Service.Implement
                     ReportedAt = i.ReportedAt,
                     Status = i.Status,
                     UserId = i.UserId,
-                    FullName = dbContext.Users
-                        .Where(x => x.Id == i.UserId)
-                        .Select(x => x.FullName)
+                    FullName = i.User.FullName,
+                    ApartmentNumber = i.User.Apartments
+                        .Select(a => a.ApartmentNumber)
                         .FirstOrDefault()
-                }).ToListAsync();
-            return incidents;
+                })
+                .FirstOrDefaultAsync()
+                ?? throw new NotFoundException($"Incident id {incidentId} is not found!");
+
+            return incident;
         }
     }
 }

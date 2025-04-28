@@ -14,6 +14,8 @@ namespace EzConDo_Service.DTO
 
         public string? FullName { get; set; }
 
+        public string ApartmentNumber { get; set; } = null!;
+
         public string Title { get; set; } = null!;
 
         public string Type { get; set; } = null!;

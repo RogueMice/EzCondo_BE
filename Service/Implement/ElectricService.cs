@@ -40,19 +40,14 @@ namespace EzConDo_Service.Implement
                 foreach (var row in rows)
                 {
                     //id
-                    string idValue = row.Cell(1).GetValue<string>().Trim();
-                    Guid? id = null;
-                    if (Guid.TryParse(idValue, out Guid guidValue))
-                    {
-                        id = guidValue;
-                    }
+                    Guid? id = Guid.NewGuid();
 
                     //MeterNumber
-                    string meterNumber = row.Cell(2).GetValue<string>().Trim();
+                    string meterNumber = row.Cell(1).GetValue<string>().Trim();
 
                     //InstallationDate
                     DateOnly installationDate;
-                    var cell = row.Cell(3);
+                    var cell = row.Cell(2);
 
                     if (cell.DataType == XLDataType.DateTime)
                     {
@@ -74,7 +69,7 @@ namespace EzConDo_Service.Implement
                     }
 
                     //ApartmentNumber
-                    string apartmentNumber = row.Cell(4).GetValue<string>().Trim();
+                    string apartmentNumber = row.Cell(3).GetValue<string>().Trim();
                     var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber) 
                         ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found"); 
 
@@ -129,8 +124,8 @@ namespace EzConDo_Service.Implement
 
                 foreach (var row in rows)
                 {
-                    string meterNumber = row.Cell(2).GetValue<string>().Trim();
-                    string currentElectricStr = row.Cell(3).GetValue<string>().Trim();
+                    string meterNumber = row.Cell(1).GetValue<string>().Trim();
+                    string currentElectricStr = row.Cell(2).GetValue<string>().Trim();
 
                     if (string.IsNullOrEmpty(meterNumber) || string.IsNullOrEmpty(currentElectricStr))
                         throw new Exception($"Missing data at row {row.RowNumber()}");
@@ -415,13 +410,12 @@ namespace EzConDo_Service.Implement
             var worksheet = workbook.Worksheets.Add("Template");
 
             // Header row
-            worksheet.Cell(1, 1).Value = "Id";
-            worksheet.Cell(1, 2).Value = "MeterNumber";
-            worksheet.Cell(1, 3).Value = "InstallationDate (yyyy-MM-dd)";
-            worksheet.Cell(1, 4).Value = "ApartmentNumber";
+            worksheet.Cell(1, 1).Value = "MeterNumber";
+            worksheet.Cell(1, 2).Value = "InstallationDate (yyyy-MM-dd)";
+            worksheet.Cell(1, 3).Value = "ApartmentNumber";
 
             // Format header
-            var headerRange = worksheet.Range(1, 1, 1, 4);
+            var headerRange = worksheet.Range(1, 1, 1, 3);
             headerRange.Style.Font.Bold = true;
             worksheet.SheetView.FreezeRows(1);
 
@@ -439,12 +433,11 @@ namespace EzConDo_Service.Implement
             var worksheet = workbook.Worksheets.Add("Template");
 
             // Header row
-            worksheet.Cell(1, 1).Value = "Id";
-            worksheet.Cell(1, 2).Value = "Metter Number";
-            worksheet.Cell(1, 3).Value = "Current Electric Number";
+            worksheet.Cell(1, 1).Value = "Metter Number";
+            worksheet.Cell(1, 2).Value = "Current Electric Number";
 
             // Format header
-            var headerRange = worksheet.Range(1, 1, 1, 3);
+            var headerRange = worksheet.Range(1, 1, 1, 2);
             headerRange.Style.Font.Bold = true;
             worksheet.SheetView.FreezeRows(1);
 

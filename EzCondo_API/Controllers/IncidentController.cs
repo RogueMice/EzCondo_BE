@@ -28,6 +28,14 @@ namespace EzCondo_API.Controllers
             return Ok(incidents);
         }
 
+        [Authorize(Policy = "Manager")]
+        [HttpGet("get-incident-by-id")]
+        public async Task<IActionResult> GetIncidentById([FromQuery] Guid incidentId)
+        {
+            var incident = await i_IncidentService.GetIncidentByIdAsync(incidentId);
+            return Ok(incident);
+        }
+
         [Authorize(Policy = "Resident")]
         [HttpGet("get-my-incident")]
         public async Task<IActionResult> GetMyIncident()
