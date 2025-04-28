@@ -22,13 +22,13 @@ namespace EzConDo_Service.Implement
     {
         private readonly ApartmentDbContext dbContext;
         private readonly IFirebasePushNotificationService firebasePush;
-        private readonly IHubContext<NotificationHub> hubContext;
+        private readonly NotificationHub notificationHub;
 
-        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, IHubContext<NotificationHub> hubContext)
+        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, NotificationHub notificationHub)
         {
             this.dbContext = dbContext;
             this.firebasePush = firebasePush;
-            this.hubContext = hubContext;
+            this.notificationHub = notificationHub;
         }
 
         public async Task<Guid?> CreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId)
@@ -107,20 +107,21 @@ namespace EzConDo_Service.Implement
                                         deviceTokens);
             }
 
-            ////Send notification real-time to manager
-            //var notificationData = new
-            //{
-            //    Id = notification.Id,
-            //    Title = notification.Title,
-            //    Content = notification.Content,
-            //    Type = notification.Type,
-            //    CreatedAt = notification.CreatedAt,
-            //    IsRead = false,
-            //    Receiver = notificationReceiver
-            //};
-
-            //await hubContext.Clients.Group("Managers")
-            //  .SendAsync("NotificationReceived", notificationData);
+            //Send notification to managers use real-time SignalR but not wait for response
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // send real-time
+                    await notificationHub
+                        .Clients.Group("Managers")
+                        .SendAsync("ReceiveNotification", notification);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error: " + ex);
+                }
+            });
 
             return notification.Id;
         }

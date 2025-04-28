@@ -26,6 +26,7 @@ namespace EzConDo_Service.Implement
             this.dbContext = dbContext;
             this.notificationHub = notificationHub;
         }
+
         public async Task<Guid?> AddAsync(IncidentDTO dto, Guid userId)
         {
             int priority;
@@ -71,7 +72,7 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 Title = $"New incident reported {dto.Title}",
                 Content = $"A new incident has been reported by {userId}.",
-                Type = "Noti",
+                Type = "incident",
                 CreatedBy = userId,
                 CreatedAt = DateTime.UtcNow,
                 Receiver = "manager"
