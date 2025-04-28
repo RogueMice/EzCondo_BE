@@ -22,12 +22,14 @@ namespace EzConDo_Service.Implement
     {
         private readonly ApartmentDbContext dbContext;
         private readonly IFirebasePushNotificationService firebasePush;
+        private readonly IHubContext<NotificationHub> hubContext;
         private readonly NotificationHub notificationHub;
 
-        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, NotificationHub notificationHub)
+        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, IHubContext<NotificationHub> hubContext, NotificationHub notificationHub)
         {
             this.dbContext = dbContext;
             this.firebasePush = firebasePush;
+            this.hubContext = hubContext;
             this.notificationHub = notificationHub;
         }
 
@@ -107,6 +109,18 @@ namespace EzConDo_Service.Implement
                                         deviceTokens);
             }
 
+            //Data send to SignalR
+            var notificationData = new
+            {
+                Id = notification.Id,
+                Title = notification.Title,
+                Content = notification.Content,
+                Type = notification.Type,
+                CreatedAt = notification.CreatedAt,
+                IsRead = false,
+                Receiver = notificationReceiver
+            };
+
             //Send notification to managers use real-time SignalR but not wait for response
             _ = Task.Run(async () =>
             {
@@ -115,7 +129,7 @@ namespace EzConDo_Service.Implement
                     // send real-time
                     await notificationHub
                         .Clients.Group("Managers")
-                        .SendAsync("ReceiveNotification", notification);
+                        .SendAsync("ReceiveNotification", notificationData);
                 }
                 catch (Exception ex)
                 {
