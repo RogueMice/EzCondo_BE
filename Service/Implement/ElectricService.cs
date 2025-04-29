@@ -404,8 +404,13 @@ namespace EzConDo_Service.Implement
             return result;
         }
 
-        public Task<byte[]> CreateTemplateElectricMetterAsync()
+        public async Task<byte[]> CreateTemplateElectricMetterAsync()
         {
+            // 1. Lấy danh sách ApartmentNumber: loại trừ role Manager và các phòng đã có người sử dụng
+            var apartmentNumbers = await dbContext.Apartments
+                .Where(a => a.UserId != null && a.User.Role.Name.ToLower() == "resident")
+                .Select(a => a.ApartmentNumber)
+                .ToListAsync();
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Template");
 
@@ -419,16 +424,27 @@ namespace EzConDo_Service.Implement
             headerRange.Style.Font.Bold = true;
             worksheet.SheetView.FreezeRows(1);
 
-            // Optionally set column widths
-            worksheet.Columns().AdjustToContents();
+            //Đổ danh sách ApartmentNumber vào cột 3, từ row 2
+            int row = 2;
+            foreach (var apt in apartmentNumbers)
+            {
+                worksheet.Cell(row, 3).Value = apt;
+                row++;
+            }
+
+            worksheet.Columns(1, 3).AdjustToContents();
 
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
-            return Task.FromResult(stream.ToArray());
+            return stream.ToArray();
         }
 
-        public Task<byte[]> CreateTemplateElectricReadingAsync()
+        public async Task<byte[]> CreateTemplateElectricReadingAsync()
         {
+            var metterNumber = await dbContext.ElectricMeters
+                .Select(em => em.MeterNumber)
+                .ToListAsync();
+
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Template");
 
@@ -441,12 +457,20 @@ namespace EzConDo_Service.Implement
             headerRange.Style.Font.Bold = true;
             worksheet.SheetView.FreezeRows(1);
 
+            //show data
+            int row = 2;
+            foreach (var meter in metterNumber)
+            {
+                worksheet.Cell(row, 1).Value = meter;
+                row++;
+            }
+
             // Optionally set column widths
-            worksheet.Columns().AdjustToContents();
+            worksheet.Columns(1, 2).AdjustToContents();
 
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
-            return Task.FromResult(stream.ToArray());
+            return stream.ToArray();
         }
     }
 }
