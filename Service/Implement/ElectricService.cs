@@ -406,7 +406,7 @@ namespace EzConDo_Service.Implement
 
         public async Task<byte[]> CreateTemplateElectricMetterAsync()
         {
-            // 1. Lấy danh sách ApartmentNumber: loại trừ role Manager và các phòng đã có người sử dụng
+            //Lấy danh sách ApartmentNumber: loại trừ role Manager và các phòng đã có người sử dụng
             var apartmentNumbers = await dbContext.Apartments
                 .Where(a => a.UserId != null && a.User.Role.Name.ToLower() == "resident")
                 .Select(a => a.ApartmentNumber)
