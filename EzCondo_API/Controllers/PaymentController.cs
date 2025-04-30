@@ -11,7 +11,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
-using static EzConDo_Service.ExceptionsConfig.CustomException;
 using System.Text.Json;
 using Net.payOS.Types;
 using Azure;
@@ -22,7 +21,6 @@ namespace EzCondo_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Policy = "Resident")]
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentService paymentService;
@@ -35,6 +33,8 @@ namespace EzCondo_API.Controllers
             this.config = config;
             this.dbContext = dbContext;
         }
+
+        [AllowAnonymous]
         [HttpPost("Create-QR-Payment")]
         public async Task<IActionResult> CreatePaymentForBooking([FromQuery] Guid bookingId)
         {
@@ -43,13 +43,14 @@ namespace EzCondo_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Web-hook")]
+        [HttpPost("webhook")]
         public async Task<IActionResult> Webhook(WebhookType body)
         {
             bool result = await paymentService.HandleWebHookAsync(body);
             return Ok(result);
         }
 
+        [Authorize(Policy = "Resident")]
         [HttpPost("Check-Payment-Status")]
         public async Task<IActionResult> CheckPaymentStatus([FromQuery] Guid paymentId)
         {

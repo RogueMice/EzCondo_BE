@@ -39,7 +39,7 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Electric")]
-        public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day = 30)
+        public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day)
         {
             var electric = await electricService.GetAllElectricAsync(status,day);
             return Ok(electric);
@@ -114,6 +114,14 @@ namespace EzCondo_API.Controllers
                 message = "Add successful !",
                 data = electricReading
             });
+        }
+
+        [Authorize(Policy = "Manager")]
+        [HttpPatch("Update-Electric-Bill")]
+        public async Task<IActionResult> UpdateElectricBills(List<UpdateElectricBillDTO> dtos)
+        {
+            var electricBills = await electricService.UpdateElectricBillsAsync(dtos);
+            return Ok(electricBills);
         }
     }
 }

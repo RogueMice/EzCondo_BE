@@ -67,11 +67,16 @@ namespace EzConDo_Service.Implement
             await dbContext.SaveChangesAsync();
 
             //Send notification to managers
+            var apartmentNumber = await dbContext.Apartments
+                                                .Where(a => a.UserId == userId)
+                                                .Select(a => a.ApartmentNumber)
+                                                .AsNoTracking()
+                                                .FirstOrDefaultAsync();
             var notification = new CreateNotificationDTO
             {
                 Id = Guid.NewGuid(),
                 Title = $"New incident reported {dto.Title}",
-                Content = $"A new incident has been reported by {userId}.",
+                Content = $"A new incident has been reported by {apartmentNumber}.",
                 Type = "incident",
                 CreatedBy = userId,
                 CreatedAt = DateTime.UtcNow,

@@ -25,7 +25,7 @@ namespace EzConDo_Service.Implement
         }
         public async Task<List<ElectricMetterDTO>> AddElectricMettersAsync(IFormFile file)
         {
-            if(file == null || file.Length == 0)
+            if (file == null || file.Length == 0)
             {
                 throw new ArgumentException("File is empty or null");
             }
@@ -70,8 +70,8 @@ namespace EzConDo_Service.Implement
 
                     //ApartmentNumber
                     string apartmentNumber = row.Cell(3).GetValue<string>().Trim();
-                    var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber) 
-                        ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found"); 
+                    var apartment = await dbContext.Apartments.FirstOrDefaultAsync(a => a.ApartmentNumber == apartmentNumber)
+                        ?? throw new NotFoundException($"Apartment '{apartmentNumber}' at row: {row.RowNumber()} is not found");
 
 
                     var dto = new ElectricMetterDTO
@@ -224,10 +224,8 @@ namespace EzConDo_Service.Implement
             return electricReadings;
         }
 
-        public async Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day = 30)
+        public async Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day)
         {
-            var fromDate = DateTime.Now.AddDays(-day ?? 30);
-
             var query = from reading in dbContext.ElectricReadings
                         join bill in dbContext.ElectricBills
                             on reading.Id equals bill.ReadingId into billGroup
@@ -238,33 +236,46 @@ namespace EzConDo_Service.Implement
                             on meter.ApartmentId equals apartment.Id
                         join user in dbContext.Users
                             on apartment.UserId equals user.Id
-                        where electricBill == null || electricBill.CreateDate >= fromDate
-                        select new ElectricViewDTO
+                        select new
                         {
-                            ElectricReadingId = reading.Id,
-                            FullName = user.FullName,
-                            PhoneNumber = user.PhoneNumber,
-                            Email = user.Email,
-                            ApartmentNumber = apartment.ApartmentNumber,
-                            Consumption = reading.Consumption,
-                            ReadingDate = reading.ReadingDate,
-                            status = electricBill != null ? electricBill.Status : "null"
+                            Reading = reading,
+                            Bill = electricBill,
+                            User = user,
+                            Apartment = apartment
                         };
+
+            if (day.HasValue)
+            {
+                var fromDate = DateTime.Now.AddDays(-day.Value);
+                query = query.Where(x => x.Bill == null || x.Bill.CreateDate >= fromDate);
+            }
+
+            // Chuyển về DTO
+            var dtoQuery = query.Select(x => new ElectricViewDTO
+            {
+                ElectricReadingId = x.Reading.Id,
+                FullName = x.User.FullName,
+                PhoneNumber = x.User.PhoneNumber,
+                Email = x.User.Email,
+                ApartmentNumber = x.Apartment.ApartmentNumber,
+                Consumption = x.Reading.Consumption,
+                ReadingDate = x.Reading.ReadingDate,
+                status = x.Bill != null ? x.Bill.Status : "null"
+            });
 
             if (status.HasValue)
             {
                 if (status.Value)
                 {
-                    query = query.Where(x => x.status == "completed" || x.status == "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status == "completed" || x.status == "pending");
                 }
                 else
                 {
-                    query = query.Where(x => x.status != "completed" && x.status != "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status != "completed" && x.status != "pending");
                 }
             }
 
-            var result = await query.ToListAsync();
-            return result;
+            return await dtoQuery.ToListAsync();
         }
 
         public async Task<ElectricDetailDTO> GetElectricDetailAsync(Guid electricReadingId)
@@ -324,6 +335,14 @@ namespace EzConDo_Service.Implement
                                .FirstOrDefaultAsync(er => er.Id == electricReadingId)
                                ?? throw new NotFoundException($"ElectricReadingId {electricReadingId} is not found !");
 
+            //Lấy bản ghi điện ngay trước đó của cùng 1 công tơ
+            var previous = await dbContext.ElectricReadings
+                                          .Where(er =>
+                                                er.ElectricMetersId == electricReading.ElectricMetersId
+                                                && er.ReadingDate < electricReading.ReadingDate)
+                                          .OrderByDescending(er => er.ReadingDate)
+                                          .FirstOrDefaultAsync();
+
             var tiers = await dbContext.PriceElectricTiers
                         .OrderBy(t => t.MinKWh)
                         .ToListAsync();
@@ -355,7 +374,7 @@ namespace EzConDo_Service.Implement
                 ReadingId = electricReading.Id,
                 TotalComsumption = electricReading.Consumption,
                 TotalAmount = totalPrice,
-                CreateDate = DateTime.Now,
+                CreateDate = DateTime.UtcNow,
                 Status = "pending"
             });
             await dbContext.SaveChangesAsync();
@@ -366,7 +385,7 @@ namespace EzConDo_Service.Implement
         {
             var query = from reading in dbContext.ElectricReadings
                         join bill in dbContext.ElectricBills
-                            on reading.Id equals bill.ReadingId 
+                            on reading.Id equals bill.ReadingId
                         join meter in dbContext.ElectricMeters
                             on reading.ElectricMetersId equals meter.Id
                         join apartment in dbContext.Apartments
@@ -408,7 +427,9 @@ namespace EzConDo_Service.Implement
         {
             //Lấy danh sách ApartmentNumber: loại trừ role Manager và các phòng đã có người sử dụng
             var apartmentNumbers = await dbContext.Apartments
-                .Where(a => a.UserId != null && a.User.Role.Name.ToLower() == "resident")
+                .Where(a => a.UserId != null
+                       && a.User.Role.Name.ToLower() == "resident"
+                       && a.ElectricMeter == null)
                 .Select(a => a.ApartmentNumber)
                 .ToListAsync();
             using var workbook = new XLWorkbook();
@@ -471,6 +492,31 @@ namespace EzConDo_Service.Implement
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
             return stream.ToArray();
+        }
+
+        public async Task<string> UpdateElectricBillsAsync(List<UpdateElectricBillDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw new BadRequestException("Danh sách DTO không được để trống.");
+
+            var ids = dtos.Select(d => d.ElectricBillId).ToList();
+            var bills = await dbContext.ElectricBills
+                                        .Where(b => ids.Contains(b.Id))
+                                        .ToListAsync();
+
+            var missingIds = ids.Except(bills.Select(b => b.Id)).ToList();
+            if (missingIds.Any())
+            {
+                throw new NotFoundException($"Không tìm thấy một số ElectricBill sau: {missingIds}");
+            }
+
+            foreach (var dto in dtos)
+            {
+                var bill = bills.First(b => b.Id == dto.ElectricBillId);
+                bill.Status = "overdue";
+            }
+            await dbContext.SaveChangesAsync();
+            return "Update success !";
         }
     }
 }

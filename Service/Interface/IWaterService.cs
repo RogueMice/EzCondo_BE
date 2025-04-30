@@ -29,5 +29,7 @@ namespace EzConDo_Service.Interface
         Task<WaterDetailDTO> GetWaterDetailAsync(Guid electricReadingId);
 
         Task<List<MyWaterDetailDTO>> GetMyWaterDetailAsync(Guid userId, bool? status);
+
+        Task<string> UpdateWaterBillsAsync(List<UpdateWaterBillDTO> dtos);
     }
 }

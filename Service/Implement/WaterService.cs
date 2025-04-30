@@ -28,7 +28,9 @@ namespace EzConDo_Service.Implement
         {
             // Lấy danh sách ApartmentNumber: loại trừ role Manager và các phòng đã có người sử dụng
             var apartmentNumbers = await dbContext.Apartments
-                .Where(a => a.UserId != null && a.User.Role.Name.ToLower() == "resident")
+                .Where(a => a.UserId != null 
+                       && a.User.Role.Name.ToLower() == "resident"
+                       && a.ElectricMeter == null)
                 .Select(a => a.ApartmentNumber)
                 .ToListAsync();
 
@@ -326,10 +328,8 @@ namespace EzConDo_Service.Implement
             return waterReadings;
         }
 
-        public async Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day = 30)
+        public async Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day)
         {
-            var fromDate = DateTime.Now.AddDays(-day ?? 30);
-
             var query = from reading in dbContext.WaterReadings
                         join bill in dbContext.WaterBills
                             on reading.Id equals bill.ReadingId into billGroup
@@ -340,33 +340,46 @@ namespace EzConDo_Service.Implement
                             on meter.ApartmentId equals apartment.Id
                         join user in dbContext.Users
                             on apartment.UserId equals user.Id
-                        where waterBill == null || waterBill.CreateDate >= fromDate
-                        select new WaterViewDTO
+                        select new
                         {
-                            Id = reading.Id,
-                            FullName = user.FullName,
-                            PhoneNumber = user.PhoneNumber,
-                            Email = user.Email,
-                            ApartmentNumber = apartment.ApartmentNumber,
-                            Consumption = reading.Consumption,
-                            ReadingDate = reading.ReadingDate,
-                            status = waterBill != null ? waterBill.Status : "null"
+                            Reading = reading,
+                            Bill = waterBill,
+                            Meter = meter,
+                            Apartment = apartment,
+                            User = user
                         };
+
+            if (day.HasValue)
+            {
+                var fromDate = DateTime.Now.AddDays(-day.Value);
+                query = query.Where(x => x.Bill == null || x.Bill.CreateDate >= fromDate);
+            }
+
+            var dtoQuery = query.Select(x => new WaterViewDTO
+            {
+                Id = x.Reading.Id,
+                FullName = x.User.FullName,
+                PhoneNumber = x.User.PhoneNumber,
+                Email = x.User.Email,
+                ApartmentNumber = x.Apartment.ApartmentNumber,
+                Consumption = x.Reading.Consumption,
+                ReadingDate = x.Reading.ReadingDate,
+                status = x.Bill != null ? x.Bill.Status : "null"
+            });
 
             if (status.HasValue)
             {
                 if (status.Value)
                 {
-                    query = query.Where(x => x.status == "completed" || x.status == "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status == "completed");
                 }
                 else
                 {
-                    query = query.Where(x => x.status != "completed" && x.status != "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status != "completed");
                 }
             }
 
-            var result = await query.ToListAsync();
-            return result;
+            return await dtoQuery.ToListAsync();
         }
 
         public async Task<WaterDetailDTO> GetWaterDetailAsync(Guid waterReadingId)
@@ -442,6 +455,31 @@ namespace EzConDo_Service.Implement
 
             var result = await query.ToListAsync();
             return result;
+        }
+
+        public async Task<string> UpdateWaterBillsAsync(List<UpdateWaterBillDTO> dtos)
+        {
+            if (dtos == null || dtos.Count == 0)
+                throw new BadRequestException("Danh sách DTO không được để trống.");
+
+            var ids = dtos.Select(d => d.WaterBillId).ToList();
+            var bills = await dbContext.WaterBills
+                                        .Where(b => ids.Contains(b.Id))
+                                        .ToListAsync();
+
+            var missingIds = ids.Except(bills.Select(b => b.Id)).ToList();
+            if (missingIds.Any())
+            {
+                throw new NotFoundException($"Không tìm thấy một số WaterBill sau: {missingIds}");
+            }
+
+            foreach (var dto in dtos)
+            {
+                var bill = bills.First(b => b.Id == dto.WaterBillId);
+                bill.Status = "overdue";
+            }
+            await dbContext.SaveChangesAsync();
+            return "Update success !";
         }
     }
 }

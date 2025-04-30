@@ -1,4 +1,5 @@
-﻿using EzConDo_Service.Implement;
+﻿using EzConDo_Service.DTO;
+using EzConDo_Service.Implement;
 using EzConDo_Service.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -37,7 +38,7 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Water")]
-        public async Task<IActionResult> GetAllWater([FromQuery] bool? status, [FromQuery] int? day = 30)
+        public async Task<IActionResult> GetAllWater([FromQuery] bool? status, [FromQuery] int? day)
         {
             var water = await waterService.GetAllWaterAsync(status, day);
             return Ok(water);
@@ -96,6 +97,14 @@ namespace EzCondo_API.Controllers
         {
             var waterReadings = await waterService.AddWaterReadingAsync(file);
             return Ok(waterReadings);
+        }
+
+        [Authorize(Policy = "Manager")]
+        [HttpPatch("Update-Water-Bill")]
+        public async Task<IActionResult> UpdateWaterBills(List<UpdateWaterBillDTO> dtos)
+        {
+            var waterBills = await waterService.UpdateWaterBillsAsync(dtos);
+            return Ok(waterBills);
         }
     }
 }

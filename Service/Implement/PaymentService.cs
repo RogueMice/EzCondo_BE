@@ -67,7 +67,7 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 UserId = booking.UserId,
                 BookingId = booking.Id,
-                Amount = price, 
+                Amount = 5000, 
                 Status = "pending",
                 Method = "VietQR",
                 CreateDate = DateTime.UtcNow
@@ -121,7 +121,7 @@ namespace EzConDo_Service.Implement
                 .FirstOrDefaultAsync(p => p.TransactionId == body.data.paymentLinkId);
 
             if (payment == null)
-                throw new NotFoundException($"TransactionId {body.data.paymentLinkId} is not found");
+                return false;
 
             var newStatus = body.success ? "completed" : "failed";
 
