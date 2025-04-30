@@ -145,8 +145,15 @@ namespace EzConDo_Service.Implement
                     // Tìm lần đọc gần nhất để lấy số điện cũ
                     var lastReading = await dbContext.ElectricReadings
                         .Where(r => r.ElectricMetersId == electricMeter.Id)
-                        .OrderByDescending(r => r.ReadingDate)
+                        .OrderByDescending(r => r.ReadingCurrentDate)
                         .FirstOrDefaultAsync();
+
+                    // Define current reading date
+                    var readingDate = DateTime.UtcNow;
+                    // Set pre-date to the previous reading's date (or default if none)
+                    var preDate = lastReading != null
+                        ? lastReading.ReadingCurrentDate
+                        : DateTime.UtcNow;
 
                     decimal preElectricNumber = lastReading?.CurrentElectricNumber ?? 0; // Nếu không có lần đọc nào trước đó, gán = 0
                     decimal consumption = currentElectricNumber - preElectricNumber;
@@ -161,7 +168,8 @@ namespace EzConDo_Service.Implement
                         PreElectricNumber = preElectricNumber,
                         CurrentElectricNumber = currentElectricNumber,
                         Consumption = consumption,
-                        ReadingDate = DateTime.Now
+                        ReadingPreDate = preDate,
+                        ReadingCurrentDate = readingDate
                     };
 
                     electricReadings.Add(dto);
@@ -172,7 +180,8 @@ namespace EzConDo_Service.Implement
                 {
                     Id = dto.Id,
                     ElectricMetersId = dto.ElectricMetersId,
-                    ReadingDate = dto.ReadingDate,
+                    ReadingPreDate = dto.ReadingPreDate,
+                    ReadingCurrentDate = dto.ReadingCurrentDate,
                     PreElectricNumber = dto.PreElectricNumber,
                     CurrentElectricNumber = dto.CurrentElectricNumber,
                     Consumption = dto.Consumption
@@ -215,7 +224,8 @@ namespace EzConDo_Service.Implement
                 {
                     Id = er.Id,
                     ElectricMetersId = er.ElectricMetersId,
-                    ReadingDate = er.ReadingDate,
+                    ReadingPreDate = er.ReadingPreDate,
+                    ReadingCurrentDate = er.ReadingCurrentDate,
                     PreElectricNumber = er.PreElectricNumber,
                     CurrentElectricNumber = er.CurrentElectricNumber,
                     Consumption = er.Consumption
@@ -259,7 +269,8 @@ namespace EzConDo_Service.Implement
                 Email = x.User.Email,
                 ApartmentNumber = x.Apartment.ApartmentNumber,
                 Consumption = x.Reading.Consumption,
-                ReadingDate = x.Reading.ReadingDate,
+                ReadingPreDate = x.Reading.ReadingPreDate,
+                ReadingCurrentDate = x.Reading.ReadingCurrentDate,
                 status = x.Bill != null ? x.Bill.Status : "null"
             });
 
@@ -318,11 +329,12 @@ namespace EzConDo_Service.Implement
                 Email = electricReading.ElectricMeters.Apartment.User.Email,
                 ApartmentNumber = electricReading.ElectricMeters.Apartment.ApartmentNumber,
                 MeterNumber = electricReading.ElectricMeters.MeterNumber,
-                consumption = electricReading.Consumption,
-                readingDate = electricReading.ReadingDate,
-                pre_electric_number = electricReading.PreElectricNumber,
-                current_electric_number = electricReading.CurrentElectricNumber,
-                price = totalPrice
+                Consumption = electricReading.Consumption,
+                ReadingPreDate = electricReading.ReadingPreDate,
+                ReadingCurrentDate = electricReading.ReadingCurrentDate,
+                Pre_electric_number = electricReading.PreElectricNumber,
+                Current_electric_number = electricReading.CurrentElectricNumber,
+                Price = totalPrice
             };
         }
 
@@ -339,8 +351,8 @@ namespace EzConDo_Service.Implement
             var previous = await dbContext.ElectricReadings
                                           .Where(er =>
                                                 er.ElectricMetersId == electricReading.ElectricMetersId
-                                                && er.ReadingDate < electricReading.ReadingDate)
-                                          .OrderByDescending(er => er.ReadingDate)
+                                                && er.ReadingCurrentDate < electricReading.ReadingCurrentDate)
+                                          .OrderByDescending(er => er.ReadingCurrentDate)
                                           .FirstOrDefaultAsync();
 
             var tiers = await dbContext.PriceElectricTiers
@@ -403,7 +415,7 @@ namespace EzConDo_Service.Implement
                             consumption = reading.Consumption,
                             pre_electric_number = reading.PreElectricNumber,
                             current_electric_number = reading.CurrentElectricNumber,
-                            readingDate = reading.ReadingDate,
+                            readingDate = reading.ReadingCurrentDate,  
                             price = bill.TotalAmount,
                             status = bill.Status
                         };

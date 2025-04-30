@@ -9,7 +9,9 @@ public partial class ElectricReading
 
     public Guid ElectricMetersId { get; set; }
 
-    public DateTime? ReadingDate { get; set; }
+    public DateTime? ReadingPreDate { get; set; }
+
+    public DateTime? ReadingCurrentDate { get; set; }
 
     public decimal PreElectricNumber { get; set; }
 

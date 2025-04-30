@@ -9,7 +9,9 @@ public partial class WaterReading
 
     public Guid WaterMetersId { get; set; }
 
-    public DateTime ReadingDate { get; set; }
+    public DateTime? ReadingPreDate { get; set; }
+
+    public DateTime ReadingCurrentDate { get; set; }
 
     public decimal PreWaterNumber { get; set; }
 

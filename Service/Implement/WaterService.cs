@@ -30,7 +30,7 @@ namespace EzConDo_Service.Implement
             var apartmentNumbers = await dbContext.Apartments
                 .Where(a => a.UserId != null 
                        && a.User.Role.Name.ToLower() == "resident"
-                       && a.ElectricMeter == null)
+                       && !a.WaterMeters.Any())
                 .Select(a => a.ApartmentNumber)
                 .ToListAsync();
 
@@ -218,8 +218,15 @@ namespace EzConDo_Service.Implement
                     // Tìm lần đọc gần nhất để lấy số nước cũ
                     var lastReading = await dbContext.WaterReadings
                         .Where(r => r.WaterMetersId == waterMetter.Id)
-                        .OrderByDescending(r => r.ReadingDate)
+                        .OrderByDescending(r => r.ReadingCurrentDate)
                         .FirstOrDefaultAsync();
+
+                    // Define current reading date
+                    var readingDate = DateTime.UtcNow;
+                    // Set pre-date to the previous reading's date (or default if none)
+                    var preDate = lastReading != null
+                        ? lastReading.ReadingCurrentDate
+                        : DateTime.UtcNow;
 
                     decimal preWaterNumber = lastReading?.CurrentWaterNumber ?? 0; // Nếu không có lần đọc nào trước đó, gán = 0
                     decimal consumption = currentWaterNumber - preWaterNumber;
@@ -231,10 +238,11 @@ namespace EzConDo_Service.Implement
                     {
                         Id = Guid.NewGuid(),
                         WaterMetersId = waterMetter.Id,
+                        ReadingPreDate = preDate,
                         PreWaterNumber = preWaterNumber,
                         CurrentWaterNumber = currentWaterNumber,
                         Consumption = consumption,
-                        ReadingDate = DateTime.Now
+                        ReadingCurrentDate = readingDate
                     };
 
                     waterReading.Add(dto);
@@ -245,7 +253,8 @@ namespace EzConDo_Service.Implement
                 {
                     Id = dto.Id,
                     WaterMetersId = dto.WaterMetersId,
-                    ReadingDate = dto.ReadingDate,
+                    ReadingPreDate = dto.ReadingPreDate,
+                    ReadingCurrentDate = dto.ReadingCurrentDate,
                     PreWaterNumber = dto.PreWaterNumber,
                     CurrentWaterNumber = dto.CurrentWaterNumber,
                     Consumption = dto.Consumption
@@ -320,7 +329,8 @@ namespace EzConDo_Service.Implement
                 {
                     Id = er.Id,
                     WaterMetersId = er.WaterMetersId,
-                    ReadingDate = er.ReadingDate,
+                    ReadingPreDate = (DateTime)er.ReadingPreDate,
+                    ReadingCurrentDate = er.ReadingCurrentDate,
                     PreWaterNumber = er.PreWaterNumber,
                     CurrentWaterNumber = er.CurrentWaterNumber,
                     Consumption = er.Consumption
@@ -363,7 +373,8 @@ namespace EzConDo_Service.Implement
                 Email = x.User.Email,
                 ApartmentNumber = x.Apartment.ApartmentNumber,
                 Consumption = x.Reading.Consumption,
-                ReadingDate = x.Reading.ReadingDate,
+                ReadingPreDate = x.Reading.ReadingPreDate,
+                ReadingCurrentDate = x.Reading.ReadingCurrentDate,
                 status = x.Bill != null ? x.Bill.Status : "null"
             });
 
@@ -407,11 +418,12 @@ namespace EzConDo_Service.Implement
                 Email = waterReading.WaterMeters.Apartment.User.Email,
                 ApartmentNumber = waterReading.WaterMeters.Apartment.ApartmentNumber,
                 MeterNumber = waterReading.WaterMeters.MeterNumber,
-                consumption = waterReading.Consumption,
-                readingDate = waterReading.ReadingDate,
-                pre_water_number = waterReading.PreWaterNumber,
-                current_water_number = waterReading.CurrentWaterNumber,
-                price = totalPrice
+                Consumption = waterReading.Consumption,
+                ReadingPreDate = waterReading.ReadingPreDate,
+                ReadingCurrentDate = waterReading.ReadingCurrentDate,
+                Pre_water_number = waterReading.PreWaterNumber,
+                Current_water_number = waterReading.CurrentWaterNumber,
+                Price = totalPrice
             };
         }
 
@@ -437,7 +449,7 @@ namespace EzConDo_Service.Implement
                             consumption = reading.Consumption,
                             pre_water_number = reading.PreWaterNumber,
                             current_water_number = reading.CurrentWaterNumber,
-                            readingDate = reading.ReadingDate,
+                            readingDate = reading.ReadingCurrentDate,
                             price = bill.TotalAmount,
                             status = bill.Status
                         };

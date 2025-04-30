@@ -12,7 +12,9 @@ namespace EzConDo_Service.DTO
 
         public Guid ElectricMetersId { get; set; } // don't have
 
-        public DateTime? ReadingDate { get; set; } // don't have
+        public DateTime? ReadingCurrentDate { get; set; } // don't have
+
+        public DateTime? ReadingPreDate { get; set; } // don't have
 
         public decimal PreElectricNumber { get; set; } // don't have
 

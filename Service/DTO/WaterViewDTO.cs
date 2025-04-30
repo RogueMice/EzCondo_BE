@@ -20,7 +20,9 @@ namespace EzConDo_Service.DTO
 
         public decimal Consumption { get; set; }
 
-        public DateTime? ReadingDate { get; set; }
+        public DateTime? ReadingPreDate { get; set; }
+
+        public DateTime? ReadingCurrentDate { get; set; }
 
         public string status { get; set; } // Payment or not
     }

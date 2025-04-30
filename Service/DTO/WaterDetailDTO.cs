@@ -18,14 +18,16 @@ namespace EzConDo_Service.DTO
 
         public string MeterNumber { get; set; } = null!;
 
-        public DateTime? readingDate { get; set; }
+        public DateTime? ReadingPreDate { get; set; }
 
-        public decimal pre_water_number { get; set; }
+        public DateTime? ReadingCurrentDate { get; set; }
 
-        public decimal current_water_number { get; set; }
+        public decimal Pre_water_number { get; set; }
 
-        public decimal consumption { get; set; }
+        public decimal Current_water_number { get; set; }
 
-        public decimal price { get; set; }
+        public decimal Consumption { get; set; }
+
+        public decimal Price { get; set; }
     }
 }
