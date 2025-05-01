@@ -278,11 +278,11 @@ namespace EzConDo_Service.Implement
             {
                 if (status.Value)
                 {
-                    dtoQuery = dtoQuery.Where(x => x.status == "completed" || x.status == "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status == "completed");
                 }
                 else
                 {
-                    dtoQuery = dtoQuery.Where(x => x.status != "completed" && x.status != "pending");
+                    dtoQuery = dtoQuery.Where(x => x.status != "completed");
                 }
             }
 
