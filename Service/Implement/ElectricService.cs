@@ -264,6 +264,7 @@ namespace EzConDo_Service.Implement
             var dtoQuery = query.Select(x => new ElectricViewDTO
             {
                 ElectricReadingId = x.Reading.Id,
+                ElectricBillId = x.Bill.Id,
                 FullName = x.User.FullName,
                 PhoneNumber = x.User.PhoneNumber,
                 Email = x.User.Email,

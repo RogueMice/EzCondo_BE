@@ -368,6 +368,7 @@ namespace EzConDo_Service.Implement
             var dtoQuery = query.Select(x => new WaterViewDTO
             {
                 Id = x.Reading.Id,
+                WaterBillId = x.Bill.Id,
                 FullName = x.User.FullName,
                 PhoneNumber = x.User.PhoneNumber,
                 Email = x.User.Email,

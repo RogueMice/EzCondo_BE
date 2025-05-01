@@ -10,6 +10,9 @@ namespace EzConDo_Service.DTO
     {
         public Guid ElectricReadingId { get; set; }
 
+
+        public Guid ElectricBillId { get; set; }
+
         public string FullName { get; set; }
 
         public string PhoneNumber { get; set; }
