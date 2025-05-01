@@ -236,6 +236,18 @@ namespace EzConDo_Service.Implement
 
         public async Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day)
         {
+            // Update các hoá đơn > 30 ngày thành overdue
+            var cutoff = DateTime.UtcNow.AddDays(-30);
+            var billsToOverdue = await dbContext.ElectricBills
+                .Where(b => b.Status != "overdue" && b.CreateDate <= cutoff)
+                .ToListAsync();
+
+            if (billsToOverdue.Any())
+            {
+                billsToOverdue.ForEach(b => b.Status = "overdue");
+                await dbContext.SaveChangesAsync();
+            }
+
             var query = from reading in dbContext.ElectricReadings
                         join bill in dbContext.ElectricBills
                             on reading.Id equals bill.ReadingId into billGroup
@@ -256,8 +268,8 @@ namespace EzConDo_Service.Implement
 
             if (day.HasValue)
             {
-                var fromDate = DateTime.Now.AddDays(-day.Value);
-                query = query.Where(x => x.Bill == null || x.Bill.CreateDate >= fromDate);
+                var fromDate = DateTime.UtcNow.AddDays(-day.Value);
+                query = query.Where(x => x.Reading.ReadingCurrentDate <= fromDate);
             }
 
             // Chuyển về DTO
