@@ -79,6 +79,64 @@ namespace EzConDo_Service.Implement
             return await CreatePaymentLink(payment.Id, (int)payment.Amount, booking.Service.ServiceName);
         }
 
+        public async Task<object> CreatePaymentForElectricAsync(Guid electricBillId, Guid userId)
+        {
+            var electricBill = dbContext.ElectricBills
+                .FirstOrDefault(b => b.Id == electricBillId)
+                ?? throw new NotFoundException($"ElectricBillId {electricBillId} is not found!");
+
+            if (electricBill.Status.ToLower() != "pending")
+            {
+                throw new BadRequestException($"ElectricBillId {electricBillId} is not in a valid state for payment.");
+            }
+
+            //Create payment
+            var payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ElectricBillId = electricBillId,
+                Amount = 5000,//electricBill.TotalAmount, set default 5k nhớ sửa
+                Status = "pending",
+                Method = "VietQR",
+                CreateDate = DateTime.UtcNow
+            };
+            await dbContext.AddAsync(payment);
+            await dbContext.SaveChangesAsync();
+
+            //generate QR code
+            return await CreatePaymentLink(payment.Id, (int)payment.Amount, "dien");
+        }
+
+        public async Task<object> CreatePaymentForWaterAsync(Guid waterBillId, Guid userId)
+        {
+            var waterBill = dbContext.WaterBills
+                .FirstOrDefault(b => b.Id == waterBillId)
+                ?? throw new NotFoundException($"WaterBillId {waterBillId} is not found!");
+
+            if (waterBill.Status.ToLower() != "pending")
+            {
+                throw new BadRequestException($"WaterBillId {waterBillId} is not in a valid state for payment.");
+            }
+
+            //Create payment
+            var payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                WaterBillId = waterBillId,
+                Amount = 5000,//waterBill.TotalAmount, set default 5k nhớ sửa
+                Status = "pending",
+                Method = "VietQR",
+                CreateDate = DateTime.UtcNow
+            };
+            await dbContext.AddAsync(payment);
+            await dbContext.SaveChangesAsync();
+
+            //generate QR code
+            return await CreatePaymentLink(payment.Id, (int)payment.Amount, "nuoc");
+        }
+
         public async Task<object> CreatePaymentLink(Guid paymentId, int amount, string serviceName)
         {
             PayOS payOS = new PayOS(_setting2.ClientID, _setting2.ApiKey, _setting2.ChecksumKey);
@@ -89,7 +147,7 @@ namespace EzConDo_Service.Implement
             PaymentData paymentData = new PaymentData(
                 Math.Abs(paymentId.GetHashCode() & 0x7FFFFFFF),
                 amount,
-                "Thanh toán dịch vụ "+ serviceName,
+                "Thanh toan tien "+ serviceName,
                 items,
                 "Payment pailure",
                 "Payment success "
@@ -118,6 +176,8 @@ namespace EzConDo_Service.Implement
         {
             var payment = await dbContext.Payments
                 .Include(p => p.Booking)
+                .Include(p => p.ElectricBill)
+                .Include(p => p.WaterBill)
                 .FirstOrDefaultAsync(p => p.TransactionId == body.data.paymentLinkId);
 
             if (payment == null)
@@ -128,6 +188,10 @@ namespace EzConDo_Service.Implement
             payment.Status = newStatus;
             if (payment.Booking != null)
                 payment.Booking.Status = newStatus;
+            else if (payment.ElectricBill != null)
+                payment.ElectricBill.Status = newStatus;
+            else if (payment.WaterBill != null)
+                payment.WaterBill.Status = newStatus;
 
             await dbContext.SaveChangesAsync();
 

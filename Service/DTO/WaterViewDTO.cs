@@ -26,6 +26,6 @@ namespace EzConDo_Service.DTO
 
         public DateTime? ReadingCurrentDate { get; set; }
 
-        public string status { get; set; } // Payment or not
+        public string Status { get; set; } // Payment or not
     }
 }

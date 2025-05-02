@@ -236,8 +236,8 @@ namespace EzConDo_Service.Implement
 
         public async Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day)
         {
-            // Update các hoá đơn > 30 ngày thành overdue
-            var cutoff = DateTime.UtcNow.AddDays(-30);
+            // Update các hoá đơn > 15 ngày thành overdue
+            var cutoff = DateTime.UtcNow.AddDays(-15);
             var billsToOverdue = await dbContext.ElectricBills
                 .Where(b => b.Status != "overdue" && b.CreateDate <= cutoff)
                 .ToListAsync();
@@ -420,27 +420,30 @@ namespace EzConDo_Service.Implement
                         where bill.CustomerId == userId
                         select new MyElectricDetailDTO
                         {
+                            ElectricBillId = bill.Id,
                             FullName = user.FullName,
                             PhoneNumber = user.PhoneNumber,
                             Email = user.Email,
                             ApartmentNumber = apartment.ApartmentNumber,
                             MeterNumber = meter.MeterNumber,
-                            consumption = reading.Consumption,
-                            pre_electric_number = reading.PreElectricNumber,
-                            current_electric_number = reading.CurrentElectricNumber,
-                            readingDate = reading.ReadingCurrentDate,  
-                            price = bill.TotalAmount,
-                            status = bill.Status
+                            Consumption = reading.Consumption,
+                            Pre_electric_number = reading.PreElectricNumber,
+                            Current_electric_number = reading.CurrentElectricNumber,
+                            ReadingPreDate = reading.ReadingPreDate,
+                            ReadingCurrentDate = reading.ReadingCurrentDate,
+                            Price = bill.TotalAmount,
+                            Status = bill.Status,
+                            PaymentTerm = bill.CreateDate.AddDays(15)
                         };
             if (status.HasValue)
             {
                 if (status.Value)
                 {
-                    query = query.Where(x => x.status == "completed");
+                    query = query.Where(x => x.Status == "completed");
                 }
                 else
                 {
-                    query = query.Where(x => x.status != "completed");
+                    query = query.Where(x => x.Status != "completed");
                 }
             }
 

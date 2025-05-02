@@ -16,6 +16,7 @@ using Net.payOS.Types;
 using Azure;
 using Net.payOS;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace EzCondo_API.Controllers
 {
@@ -34,11 +35,31 @@ namespace EzCondo_API.Controllers
             this.dbContext = dbContext;
         }
 
-        [AllowAnonymous]
-        [HttpPost("Create-QR-Payment")]
+        [Authorize(Policy = "Resident")]
+        [HttpPost("Create-QR-Booking-Payment")]
         public async Task<IActionResult> CreatePaymentForBooking([FromQuery] Guid bookingId)
         {
             var result = await paymentService.CreatePaymentForBookingAsync(bookingId);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
+        [HttpPost("Create-QR-Electric-Payment")]
+        public async Task<IActionResult> CreatePaymentForElectric([FromQuery] Guid electricBillId)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
+            Guid.TryParse(userId, out var user_Id);
+            var result = await paymentService.CreatePaymentForElectricAsync(electricBillId, user_Id);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
+        [HttpPost("Create-QR-Water-Payment")]
+        public async Task<IActionResult> CreatePaymentForWater([FromQuery] Guid waterBillId)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
+            Guid.TryParse(userId, out var user_Id);
+            var result = await paymentService.CreatePaymentForWaterAsync(waterBillId, user_Id);
             return Ok(result);
         }
 

@@ -16,5 +16,9 @@ namespace EzConDo_Service.Interface
         Task<bool> HandleWebHookAsync(WebhookType body);
 
         Task<bool> CheckPaymentAsync(Guid paymentId);
+
+        Task<object> CreatePaymentForElectricAsync(Guid electricBillId, Guid userId);
+
+        Task<object> CreatePaymentForWaterAsync(Guid waterBillId, Guid userId);
     }
 }
