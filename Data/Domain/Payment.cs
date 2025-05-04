@@ -17,7 +17,7 @@ public partial class Payment
 
     public decimal Amount { get; set; }
 
-    public string? TransactionId { get; set; } 
+    public string? TransactionId { get; set; }
 
     public string Status { get; set; } = null!;
 
@@ -25,9 +25,13 @@ public partial class Payment
 
     public DateTime CreateDate { get; set; }
 
+    public Guid? ParkingId { get; set; }
+
     public virtual Booking? Booking { get; set; }
 
     public virtual ElectricBill? ElectricBill { get; set; }
+
+    public virtual ParkingLot? Parking { get; set; }
 
     public virtual User User { get; set; } = null!;
 

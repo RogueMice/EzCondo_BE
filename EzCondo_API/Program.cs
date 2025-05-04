@@ -184,6 +184,7 @@ builder.Services.AddScoped<IElectricService, ElectricService>();
 builder.Services.AddScoped<IWaterService, WaterService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IParkingLotService, ParkingLotService>();
 
 //Add cloud service
 builder.Services.AddScoped<CloudinaryService>();
