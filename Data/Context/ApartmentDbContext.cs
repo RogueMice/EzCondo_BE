@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EzCondo_Data.Context;
 
-
 public partial class ApartmentDbContext : DbContext
 {
     public ApartmentDbContext()
@@ -428,6 +427,7 @@ public partial class ApartmentDbContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
+            entity.Property(e => e.Accept).HasColumnName("accept");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithMany(p => p.ParkingLots)

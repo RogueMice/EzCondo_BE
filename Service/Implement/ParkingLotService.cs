@@ -36,7 +36,8 @@ namespace EzConDo_Service.Implement
             var parkingLot = new ParkingLot
             {
                 Id = parkingLotId,
-                UserId = userId
+                UserId = userId,
+                Accept = false
             };
 
             //ParkingLotDetail
@@ -92,7 +93,8 @@ namespace EzConDo_Service.Implement
                                         .OrderBy(a => a.Id)
                                         .Select(a => a.ApartmentNumber)
                                         .FirstOrDefault(),
-                    Type = d.Type
+                    Type = d.Type,
+                    Accept = d.ParkingLot.Accept
                 })
                 .ToListAsync();
 
@@ -104,7 +106,8 @@ namespace EzConDo_Service.Implement
                     Name = g.First().FullName,
                     Apartment = g.First().Apartment,
                     NumberOfMotorbike = g.Count(x => x.Type == "motor"),
-                    NumberOfCar = g.Count(x => x.Type == "car")
+                    NumberOfCar = g.Count(x => x.Type == "car"),
+                    Accept = g.First().Accept
                 })
                 .ToList();
 
@@ -113,15 +116,23 @@ namespace EzConDo_Service.Implement
 
         public async Task<string> UpdateOrDeleteAsync(ParkingLotAcceptOrRejectDTO dto)
         {
+            var parkingLot = await dbContext.ParkingLots
+               .Include(pl => pl.ParkingLotDetails)
+               .SingleOrDefaultAsync(pl => pl.Id == dto.ParkingLotId)
+               ?? throw new NotFoundException($"Not found parking lot {dto.ParkingLotId}.");
+
             var detailQuery = dbContext.ParkingLotDetails
                 .Where(d => d.ParkingLot.Id == dto.ParkingLotId);
 
             var count = await detailQuery.CountAsync();
             if (count == 0)
                 throw new NotFoundException($"Not found any card for parking lot {dto.ParkingLotId}.");
-
             if (dto.Accept)
             {
+                //update parkingLot 
+                parkingLot.Accept = dto.Accept;
+                dbContext.ParkingLots.Update(parkingLot);
+
                 // transaction
                 await using var tx = await dbContext.Database.BeginTransactionAsync();
 
@@ -154,7 +165,7 @@ namespace EzConDo_Service.Implement
                     .FirstOrDefaultAsync()
                     ?? throw new ConflictException("UserId for this parking lot is null.");
 
-                // 5. Tạo Payment
+                //Tạo Payment
                 var invoice = new Payment
                 {
                     Id = Guid.NewGuid(),
@@ -236,7 +247,11 @@ namespace EzConDo_Service.Implement
         {
             var parkingLotDetail = await dbContext.ParkingLotDetails.FirstOrDefaultAsync(pd => pd.Id == id) 
                 ?? throw new NotFoundException($"Not found parking lot detail {id}");
+            var parkingLot = await dbContext.ParkingLots
+                .FirstOrDefaultAsync(pl => pl.Id == parkingLotDetail.ParkingLotId)
+                ?? throw new NotFoundException($"Not found parking lot {parkingLotDetail.ParkingLotId}");
             dbContext.ParkingLotDetails.Remove(parkingLotDetail);
+            dbContext.ParkingLots.Remove(parkingLot);
             await dbContext.SaveChangesAsync();
             return parkingLotDetail.Id;
         }

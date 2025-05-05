@@ -10,6 +10,8 @@ public partial class ParkingLot
 
     public Guid? UserId { get; set; }
 
+    public bool Accept { get; set; }
+
     public virtual ICollection<ParkingLotDetail> ParkingLotDetails { get; set; } = new List<ParkingLotDetail>();
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();

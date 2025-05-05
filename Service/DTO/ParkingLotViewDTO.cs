@@ -18,6 +18,8 @@ namespace EzConDo_Service.DTO
 
         public int NumberOfCar { get; set; }
 
+        public bool Accept { get; set; }
+
         public int Total => NumberOfMotorbike + NumberOfCar;
     }
 }
