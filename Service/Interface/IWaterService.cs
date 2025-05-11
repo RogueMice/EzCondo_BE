@@ -24,7 +24,7 @@ namespace EzConDo_Service.Interface
 
         Task<List<WaterReadingDTO>> GetAllWaterReadingsAsync();
 
-        Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day = 30);
+        Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day, int? month);
 
         Task<WaterDetailDTO> GetWaterDetailAsync(Guid electricReadingId);
 

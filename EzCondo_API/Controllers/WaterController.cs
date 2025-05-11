@@ -38,9 +38,9 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Water")]
-        public async Task<IActionResult> GetAllWater([FromQuery] bool? status, [FromQuery] int? day)
+        public async Task<IActionResult> GetAllWater([FromQuery] bool? status, [FromQuery] int? day, [FromQuery] int? month)
         {
-            var water = await waterService.GetAllWaterAsync(status, day);
+            var water = await waterService.GetAllWaterAsync(status, day, month);
             return Ok(water);
         }
 

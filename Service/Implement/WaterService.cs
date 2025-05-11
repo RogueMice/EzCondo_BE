@@ -338,7 +338,7 @@ namespace EzConDo_Service.Implement
             return waterReadings;
         }
 
-        public async Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day)
+        public async Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day, int? month)
         {
             // Update các hoá đơn > 15 ngày thành overdue
             var cutoff = DateTime.UtcNow.AddDays(-15);
@@ -375,6 +375,13 @@ namespace EzConDo_Service.Implement
             {
                 var fromDate = DateTime.UtcNow.AddDays(-day.Value);
                 query = query.Where(x => x.Reading.ReadingCurrentDate <= fromDate);
+            }
+            if (month.HasValue)
+            {
+                query = query.Where(x =>
+                    x.Bill != null &&
+                    x.Bill.CreateDate.Month == month.Value
+                );
             }
 
             var dtoQuery = query.Select(x => new WaterViewDTO

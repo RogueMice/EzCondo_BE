@@ -19,7 +19,7 @@ namespace EzConDo_Service.Interface
 
         Task<List<ElectricReadingDTO>> GetAllElectricReadingsAsync();
 
-        Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day = 30);
+        Task<List<ElectricViewDTO>> GetAllElectricAsync(bool? status, int? day, int? month);
 
         Task<ElectricDetailDTO> GetElectricDetailAsync(Guid electricReadingId);
 

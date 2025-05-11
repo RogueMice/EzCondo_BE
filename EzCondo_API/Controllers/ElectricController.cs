@@ -39,9 +39,9 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Electric")]
-        public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day)
+        public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day, [FromQuery] int? month)
         {
-            var electric = await electricService.GetAllElectricAsync(status,day);
+            var electric = await electricService.GetAllElectricAsync(status,day,month);
             return Ok(electric);
         }
 
