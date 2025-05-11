@@ -21,6 +21,7 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
+
         public async Task<Guid> AddBookingAsync(BookingDTO dto)
         {
             bool serviceExists = await dbContext.Services.AnyAsync(s => s.Id == dto.ServiceId);
@@ -63,6 +64,51 @@ namespace EzConDo_Service.Implement
 
             await dbContext.SaveChangesAsync();
             return booking.Id;
+        }
+
+        public async Task<List<BookingViewDTO>> GetAllBookingsAsync(string? search, int? month)
+        {
+            var query = dbContext.Bookings
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Apartments)
+                .Include(p => p.Payments)
+                .Include(p => p.Service)
+                .Where(p => p.Status == "completed")
+                .AsQueryable();
+
+            // Filter for month
+            if (month.HasValue && month.Value >= 1 && month.Value <= 12)
+            {
+                query = query.Where(p => p.Payments.Any(pm => pm.CreateDate.Month == month.Value));
+            }
+
+            // Filter for search: Find on Name or ApartmentNumber
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var key = search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.User.FullName.ToLower().Contains(key)
+                    || p.User.Apartments.Any(a => a.ApartmentNumber.ToLower().Contains(key))
+                    || p.Service.ServiceName.ToLower().Contains(key)
+                );
+            }
+
+            var result = await query
+                .OrderByDescending(p => p.StartDate)
+                .Select(p => new BookingViewDTO
+                {
+                    Id = p.Id,
+                    FullName = p.User.FullName,
+                    ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
+                    ServiceName = p.Service.ServiceName,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    Price = p.Payments.FirstOrDefault().Amount,
+                    BookingDate = p.Payments.FirstOrDefault().CreateDate
+                })
+                .ToListAsync();
+
+            return result;
         }
     }
 }

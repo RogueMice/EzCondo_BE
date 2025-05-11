@@ -19,6 +19,15 @@ namespace EzCondo_API.Controllers
             this.bookingService = bookingService;
         }
 
+        [Authorize(Policy = "Manager")]
+        [HttpGet("Get-All-Booking")]
+        public async Task<IActionResult> GetAllBooking([FromQuery] string? search, int? month)
+        {
+            var result = await bookingService.GetAllBookingsAsync(search, month);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
         [HttpPost("Add-Booking")]
         public async Task<IActionResult> AddOrUpdateBooking([FromBody] BookingDTO dto)
         {

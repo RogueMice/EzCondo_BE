@@ -10,5 +10,7 @@ namespace EzConDo_Service.Interface
     public interface IBookingService
     {
         Task<Guid> AddBookingAsync(BookingDTO dto);
+
+        Task<List<BookingViewDTO>> GetAllBookingsAsync(string? search, int? month);
     }
 }

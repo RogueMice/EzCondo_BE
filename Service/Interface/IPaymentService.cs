@@ -20,5 +20,7 @@ namespace EzConDo_Service.Interface
         Task<object> CreatePaymentForElectricAsync(Guid electricBillId, Guid userId);
 
         Task<object> CreatePaymentForWaterAsync(Guid waterBillId, Guid userId);
+
+        Task<List<PaymentViewDTO>> GetAllPaymentsAsync(string? search, int? month);
     }
 }

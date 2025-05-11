@@ -205,5 +205,57 @@ namespace EzConDo_Service.Implement
                 return true;
             return false;
         }
+
+        public async Task<List<PaymentViewDTO>> GetAllPaymentsAsync(string? search, int? month)
+        {
+            var query = dbContext.Payments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Apartments)     
+                .Include(p => p.Booking)
+                .Include(p => p.ElectricBill)
+                .Include(p => p.WaterBill)
+                .Include(p => p.Parking)
+                .Where(p => p.Status == "completed")
+                .AsQueryable();
+
+            //Filter for month 
+            if (month.HasValue && month.Value >= 1 && month.Value <= 12)
+            {
+                query = query.Where(p => p.CreateDate.Month == month.Value);
+            }
+
+            //Filter for search: Find on Name or ApartmentNumber
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var key = search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.User.FullName.ToLower().Contains(key)
+                    || p.User.Apartments.Any(a => a.ApartmentNumber.ToLower().Contains(key))
+                    // search for Type
+                    || (p.Booking != null && "booking".Contains(key))
+                    || (p.ElectricBill != null && "electric".Contains(key))
+                    || (p.WaterBill != null && "water".Contains(key))
+                    || (p.Parking != null && "parking".Contains(key)));
+            }
+
+            var result = await query
+                .OrderByDescending(p => p.CreateDate)
+                .Select(p => new PaymentViewDTO
+                {
+                    Id = p.Id,
+                    FullName = p.User.FullName,
+                    ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
+                    Amount = p.Amount,
+                    CreateDate = p.CreateDate,
+                    Type = p.Booking != null ? "Booking"
+                         : p.ElectricBill != null ? "Electric"
+                         : p.WaterBill != null ? "Water"
+                         : p.Parking != null ? "Parking"
+                         : "Other"
+                })
+                .ToListAsync();
+
+            return result;
+        }
     }
 }

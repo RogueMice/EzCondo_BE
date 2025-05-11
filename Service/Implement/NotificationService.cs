@@ -122,22 +122,30 @@ namespace EzConDo_Service.Implement
             };
 
             //Send notification to managers use real-time SignalR but not wait for response
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    // send real-time
-                    await notificationHub
-                        .Clients.Group("Managers")
-                        .SendAsync("ReceiveNotification", notificationData);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Error: " + ex);
-                }
-            });
+            var senderRole = await dbContext.Users
+                                    .Where(u => u.Id == userId)
+                                    .Select(u => u.Role.Name)
+                                    .FirstOrDefaultAsync()
+                                    .ConfigureAwait(false);
 
-            return notification.Id;
+            if (senderRole.ToString() == "admin")
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await notificationHub
+                            .Clients.Group("Managers")
+                            .SendAsync("ReceiveNotification", notificationData);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error sending SignalR: " + ex);
+                    }
+                });
+            }
+
+                return notification.Id;
         }
 
         public async Task<NotificationListDTO> GetNotificationsAsync(bool? isRead, int page, int pageSize, Guid userId, string? type)

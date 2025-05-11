@@ -35,6 +35,14 @@ namespace EzCondo_API.Controllers
             this.dbContext = dbContext;
         }
 
+        [Authorize(Policy = "Manager")]
+        [HttpGet("History-Payment")]
+        public async Task<IActionResult> GetAllPayments([FromQuery] string? search, int? month)
+        {
+            var result = await paymentService.GetAllPaymentsAsync(search, month);
+            return Ok(result);
+        }
+
         [Authorize(Policy = "Resident")]
         [HttpPost("Create-QR-Booking-Payment")]
         public async Task<IActionResult> CreatePaymentForBooking([FromQuery] Guid bookingId)

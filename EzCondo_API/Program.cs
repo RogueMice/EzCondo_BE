@@ -29,7 +29,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000","http://localhost:7254") // Specify allowed origins
+            .WithOrigins("http://localhost:3000", "http://0.0.0.0:7254", "https://ez-condo.vercel.app") // Specify allowed origins
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials(); // Allow credentials
@@ -216,8 +216,11 @@ builder.Services.Configure<PayOsClientSettings>(
 
 var app = builder.Build();
 
+app.UseRouting();
+
 //use cors
 app.UseCors("AllowAll");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -227,7 +230,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 
 //Declare Authen
 app.UseAuthentication();
