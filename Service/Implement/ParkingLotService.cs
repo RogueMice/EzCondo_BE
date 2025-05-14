@@ -1,8 +1,12 @@
-﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+﻿using CloudinaryDotNet;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using EzCondo_Data.Context;
 using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
+using EzConDo_Service.FirebaseIntegration;
 using EzConDo_Service.Interface;
+using FirebaseAdmin.Auth;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -16,10 +20,12 @@ namespace EzConDo_Service.Implement
     public class ParkingLotService : IParkingLotService
     {
         private readonly ApartmentDbContext dbContext;
+        private readonly IFirebasePushNotificationService firebasePush;
 
-        public ParkingLotService(ApartmentDbContext dbContext)
+        public ParkingLotService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush)
         {
             this.dbContext = dbContext;
+            this.firebasePush = firebasePush;
         }
         public async Task<List<Guid>> AddParkingLotAsync(ParkingCardRequestDTO dtos, Guid userId)
         {
@@ -179,6 +185,12 @@ namespace EzConDo_Service.Implement
                 await dbContext.Payments.AddAsync(invoice);
                 await dbContext.SaveChangesAsync();
 
+                //Cho chạy tự động, nếu sau 30 ngày hóa đơn được tạo đã thanh toán thì tạo hóa đơn mới
+                BackgroundJob.Schedule<IParkingLotService>(
+                        svc => svc.CreateRecurringParkingBillAsync(invoice.Id),
+                        TimeSpan.FromDays(30)
+                    );
+
                 // Commit
                 await tx.CommitAsync();
 
@@ -186,8 +198,11 @@ namespace EzConDo_Service.Implement
             }
             else
             {
-                var deleted = await detailQuery.ExecuteDeleteAsync();
-                return $"Reject success: deleted {deleted} card(s).";
+                var deletedDetails = await detailQuery.ExecuteDeleteAsync();
+
+                dbContext.ParkingLots.Remove(parkingLot);
+                await dbContext.SaveChangesAsync();
+                return $"Reject success: deleted {deletedDetails} card(s) and parking lot {dto.ParkingLotId}.";
             }
         }
 
@@ -254,6 +269,201 @@ namespace EzConDo_Service.Implement
             dbContext.ParkingLots.Remove(parkingLot);
             await dbContext.SaveChangesAsync();
             return parkingLotDetail.Id;
+        }
+
+        public async Task UpdateOverdueParkingBillsAsync()
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-15);
+            var billsToOverdue = await dbContext.Payments
+                .Where(b => b.Status == "pending" && b.CreateDate <= cutoff)
+                .ToListAsync();
+
+            if (!billsToOverdue.Any())
+                return;
+
+            // Set overdue status
+            billsToOverdue.ForEach(b => b.Status = "overdue");
+
+            // Lock related parking cards
+            var parkingLotIds = billsToOverdue
+                .Where(b => b.ParkingId != null)
+                .Select(b => b.ParkingId.Value)
+                .Distinct()
+                .ToList();
+
+            var parkingDetails = await dbContext.ParkingLotDetails
+                .Where(p => parkingLotIds.Contains(p.ParkingLotId.Value))
+                .ToListAsync();
+
+            parkingDetails.ForEach(p => p.Status = "inactive");
+
+            // Prepare notifications
+            foreach (var bill in billsToOverdue)
+            {
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    Title = $"Quá hạn thanh toán tiền bãi đỗ xe tháng {bill.CreateDate.Month}",
+                    Content = $"Quý cư dân thân mến, hóa đơn tiền bãi đỗ xe tháng {bill.CreateDate.Month} ({bill.Amount:N0} VND) đã quá hạn thanh toán. " +
+                              "Vui lòng thực hiện thanh toán trong thời gian sớm nhất để đảm bảo quyền lợi và tránh các gián đoạn không mong muốn.",
+                    Type = "Notice",
+                    CreatedBy = bill.UserId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                dbContext.Notifications.Add(notification);
+
+                dbContext.NotificationReceivers.Add(new NotificationReceiver
+                {
+                    Id = Guid.NewGuid(),
+                    NotificationId = notification.Id,
+                    UserId = bill.UserId,
+                    Receiver = "resident",
+                    IsRead = false,
+                    ReadAt = null
+                });
+
+                var deviceTokens = await dbContext.UserDevices
+                    .Where(ud => ud.UserId == bill.UserId && ud.IsActive)
+                    .Select(ud => ud.FcmToken)
+                    .ToListAsync();
+
+                if (deviceTokens.Any())
+                {
+                    await firebasePush.SendPushNotificationAsync(
+                        notification.Title,
+                        notification.Content,
+                        deviceTokens);
+                }
+            }
+
+            // Commit all changes
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task CreateRecurringParkingBillAsync(Guid previousInvoiceId)
+        {
+            var old = await dbContext.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == previousInvoiceId && p.Status == "completed");
+
+            if (old == null) return; 
+
+            // Lấy lại các thông tin cần
+            var parkingLotId = old.ParkingId ?? throw new Exception("Missing ParkingLotId");
+            var userId = old.UserId;
+
+            var price = await dbContext.PriceParkingLots.AsNoTracking().FirstOrDefaultAsync();
+            if (price == null) throw new Exception("Price config not found");
+
+            var details = await dbContext.ParkingLotDetails
+                .Where(d => d.ParkingLotId == parkingLotId)
+                .Select(d => new { d.Type })
+                .ToListAsync();
+
+            decimal totalAmount = details.Sum(d => d.Type == "car"
+                ? (price.PricePerOto ?? throw new Exception("PricePerOto missing"))
+                : (price.PricePerMotor ?? throw new Exception("PricePerMotor missing")));
+
+            // Tạo hóa đơn mới
+            var newPayment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ParkingId = parkingLotId,
+                Amount = totalAmount,
+                Status = "pending",
+                Method = "VietQR",
+                CreateDate = DateTime.UtcNow
+            };
+
+            await dbContext.Payments.AddAsync(newPayment);
+            await dbContext.SaveChangesAsync();
+
+            // Lập tiếp hoá đơn sau 30 ngày nữa
+            BackgroundJob.Schedule<IParkingLotService>(
+                svc => svc.CreateRecurringParkingBillAsync(newPayment.Id),
+                TimeSpan.FromDays(30)
+            );
+        }
+
+        public async Task<List<ParkingViewDTO>> GetAllParkingAsync(bool? status, int? day, int? month)
+        {
+            var query = dbContext.Payments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Apartments)
+                .Include(p => p.Parking)
+                .AsQueryable();
+
+            if (day.HasValue)
+            {
+                var fromDate = DateTime.UtcNow.AddDays(-day.Value);
+                query = query.Where(p => p.CreateDate <= fromDate);
+            }
+
+            if (month.HasValue && month.Value >= 1 && month.Value <= 12)
+            {
+                query = query.Where(p => p.CreateDate.Month == month.Value);
+            }
+
+            if (status.HasValue)
+            {
+                if (status.Value)
+                    query = query.Where(p => p.Status == "completed");
+                else
+                    query = query.Where(p => p.Status != "completed");
+            }
+
+            query = query.Where(p => p.ParkingId.HasValue);
+            var result = await query
+                .OrderByDescending(p => p.CreateDate)
+                .Select(p => new ParkingViewDTO
+                {
+                    ParkingId = p.ParkingId.Value,
+                    FullName = p.User.FullName,
+                    ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
+                    Amount = p.Amount,
+                    CreateDate = p.CreateDate,
+                    Email = p.User.Email,
+                    PhoneNumber = p.User.PhoneNumber,
+                    Status = p.Status
+                })
+                .ToListAsync();
+            return result;
+        }
+
+        public async Task<List<ParkingLotViewDTO>> GetMyParkingAsync(Guid userId)
+        {
+            var flat = await dbContext.ParkingLotDetails
+                .AsNoTracking()
+                .Where(d => d.ParkingLot.UserId == userId)
+                .Select(d => new
+                {
+                    ParkingId = d.ParkingLot.Id,
+                    FullName = d.ParkingLot.User.FullName,
+                    Apartment = d.ParkingLot.User.Apartments
+                                        .OrderBy(a => a.Id)
+                                        .Select(a => a.ApartmentNumber)
+                                        .FirstOrDefault(),
+                    Type = d.Type,
+                    Accept = d.ParkingLot.Accept
+                })
+                .ToListAsync();
+
+            var grouped = flat
+                .GroupBy(x => x.ParkingId)
+                .Select(g => new ParkingLotViewDTO
+                {
+                    ParkingId = g.Key,
+                    Name = g.First().FullName,
+                    Apartment = g.First().Apartment,
+                    NumberOfMotorbike = g.Count(x => x.Type == "motor"),
+                    NumberOfCar = g.Count(x => x.Type == "car"),
+                    Accept = g.First().Accept
+                })
+                .ToList();
+
+            return grouped;
         }
     }
 }

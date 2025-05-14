@@ -110,5 +110,26 @@ namespace EzConDo_Service.Implement
 
             return result;
         }
+
+        public async Task<List<MyBookingViewDTO>> GetMyBookingAsync(Guid userId)
+        {
+            var query = dbContext.Bookings
+                .Include(b => b.Service)
+                .Where(b => b.UserId == userId
+                && b.Status.ToLower() == "completed");
+
+            var result = await query
+                .OrderByDescending(b => b.StartDate)
+                .Select(b => new MyBookingViewDTO
+                {
+                    Id = b.Id,
+                    ServiceName = b.Service.ServiceName,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Status = b.Status
+                })
+                .ToListAsync();
+            return result;
+        }
     }
 }

@@ -19,6 +19,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using CloudinaryDotNet;
 using System.Text.Json;
 using Azure;
+using DocumentFormat.OpenXml.Bibliography;
 
 namespace EzConDo_Service.Implement
 {
@@ -45,6 +46,14 @@ namespace EzConDo_Service.Implement
             if (booking.Status.ToLower() != "pending")
             {
                 throw new BadRequestException($"BookingId {bookingId} is not in a valid state for payment.");
+            }
+
+            var existingPayment = await dbContext.Payments
+                .FirstOrDefaultAsync(p => p.BookingId == bookingId && p.Status == "pending");
+
+            if (existingPayment != null)
+            {
+                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, booking.Service.ServiceName);
             }
 
             //Get price's month or year
@@ -81,31 +90,41 @@ namespace EzConDo_Service.Implement
 
         public async Task<object> CreatePaymentForElectricAsync(Guid electricBillId, Guid userId)
         {
-            var electricBill = dbContext.ElectricBills
-                .FirstOrDefault(b => b.Id == electricBillId)
+            var electricBill = await dbContext.ElectricBills
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.Id == electricBillId)
                 ?? throw new NotFoundException($"ElectricBillId {electricBillId} is not found!");
 
-            if (electricBill.Status.ToLower() != "pending")
+            if (!string.Equals(electricBill.Status, "pending", StringComparison.OrdinalIgnoreCase))
             {
                 throw new BadRequestException($"ElectricBillId {electricBillId} is not in a valid state for payment.");
             }
 
-            //Create payment
+            var existingPayment = await dbContext.Payments
+                .FirstOrDefaultAsync(p => p.ElectricBillId == electricBillId && p.Status == "pending");
+
+            if (existingPayment != null)
+            {
+                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, "dien");
+            }
+
             var payment = new Payment
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ElectricBillId = electricBillId,
-                Amount = 5000,//electricBill.TotalAmount, set default 5k nhớ sửa
+                Amount = electricBill.TotalAmount,
                 Status = "pending",
                 Method = "VietQR",
                 CreateDate = DateTime.UtcNow
             };
-            await dbContext.AddAsync(payment);
+
+            await dbContext.Payments.AddAsync(payment);
             await dbContext.SaveChangesAsync();
 
-            //generate QR code
-            return await CreatePaymentLink(payment.Id, (int)payment.Amount, "dien");
+            var result = await CreatePaymentLink(payment.Id, (int)payment.Amount, "dien");
+
+            return result;
         }
 
         public async Task<object> CreatePaymentForWaterAsync(Guid waterBillId, Guid userId)
@@ -117,6 +136,14 @@ namespace EzConDo_Service.Implement
             if (waterBill.Status.ToLower() != "pending")
             {
                 throw new BadRequestException($"WaterBillId {waterBillId} is not in a valid state for payment.");
+            }
+
+            var existingPayment = await dbContext.Payments
+                .FirstOrDefaultAsync(p => p.WaterBillId == waterBillId && p.Status == "pending");
+
+            if (existingPayment != null)
+            {
+                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, "nuoc");
             }
 
             //Create payment
@@ -137,6 +164,17 @@ namespace EzConDo_Service.Implement
             return await CreatePaymentLink(payment.Id, (int)payment.Amount, "nuoc");
         }
 
+        public async Task<object> CreatePaymentForParkingAsync(Guid parkingId, Guid userId)
+        {
+            var payment = dbContext.Payments
+                .FirstOrDefault(p => p.ParkingId == parkingId)
+                ?? throw new NotFoundException($"Id {parkingId} is not found!");
+
+            //generate QR code
+
+            return await CreatePaymentLink(payment.Id, 5000, "do xe");  //set default 5k
+        }
+
         public async Task<object> CreatePaymentLink(Guid paymentId, int amount, string serviceName)
         {
             PayOS payOS = new PayOS(_setting2.ClientID, _setting2.ApiKey, _setting2.ChecksumKey);
@@ -144,8 +182,9 @@ namespace EzConDo_Service.Implement
             List<ItemData> items = new List<ItemData>();
             items.Add(item);
 
+            Guid newPaymentId = Guid.NewGuid();
             PaymentData paymentData = new PaymentData(
-                Math.Abs(paymentId.GetHashCode() & 0x7FFFFFFF),
+                Math.Abs(newPaymentId.GetHashCode() & 0x7FFFFFFF),
                 amount,
                 "Thanh toan tien "+ serviceName,
                 items,
@@ -192,6 +231,9 @@ namespace EzConDo_Service.Implement
                 payment.ElectricBill.Status = newStatus;
             else if (payment.WaterBill != null)
                 payment.WaterBill.Status = newStatus;
+            else if (payment.ParkingId != null)
+                payment.Status = newStatus;
+
 
             await dbContext.SaveChangesAsync();
 
@@ -255,6 +297,38 @@ namespace EzConDo_Service.Implement
                 })
                 .ToListAsync();
 
+            return result;
+        }
+
+        public async Task<List<MyPaymentViewDTO>> GetMyPaymentsAsync(Guid userId)
+        {
+            var query = dbContext.Payments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Apartments)
+                .Include(p => p.Booking)
+                .Include(p => p.ElectricBill)
+                .Include(p => p.WaterBill)
+                .Include(p => p.Parking)
+                .Where(p => p.UserId == userId)
+                .AsQueryable();
+
+            var result = await query
+                .OrderByDescending(p => p.CreateDate)
+                .Select(p => new MyPaymentViewDTO
+                {
+                    Id = p.Id,
+                    FullName = p.User.FullName,
+                    ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
+                    Amount = p.Amount,
+                    CreateDate = p.CreateDate,
+                    Type = p.Booking != null ? "Booking"
+                         : p.ElectricBill != null ? "Electric"
+                         : p.WaterBill != null ? "Water"
+                         : p.Parking != null ? "Parking"
+                         : "Other",
+                    Status = p.Status
+                })
+                .ToListAsync();
             return result;
         }
     }

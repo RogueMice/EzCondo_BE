@@ -28,6 +28,16 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "Resident")]
+        [HttpGet("Get-My-Booking")]
+        public async Task<IActionResult> GetMyBooking()
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
+            Guid.TryParse(userId, out var user_Id);
+            var result = await bookingService.GetMyBookingAsync(user_Id);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
         [HttpPost("Add-Booking")]
         public async Task<IActionResult> AddOrUpdateBooking([FromBody] BookingDTO dto)
         {

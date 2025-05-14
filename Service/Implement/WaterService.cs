@@ -2,7 +2,9 @@
 using EzCondo_Data.Context;
 using EzCondo_Data.Domain;
 using EzConDo_Service.DTO;
+using EzConDo_Service.FirebaseIntegration;
 using EzConDo_Service.Interface;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,10 +20,12 @@ namespace EzConDo_Service.Implement
     public class WaterService: IWaterService
     {
         private readonly ApartmentDbContext dbContext;
+        private readonly IFirebasePushNotificationService firebasePush;
 
-        public WaterService(ApartmentDbContext dbContext)
+        public WaterService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush)
         {
             this.dbContext = dbContext;
+            this.firebasePush = firebasePush;
         }
 
         public async Task<byte[]> CreateTemplateWaterMetterAsync()
@@ -340,18 +344,6 @@ namespace EzConDo_Service.Implement
 
         public async Task<List<WaterViewDTO>> GetAllWaterAsync(bool? status, int? day, int? month)
         {
-            // Update các hoá đơn > 15 ngày thành overdue
-            var cutoff = DateTime.UtcNow.AddDays(-15);
-            var billsToOverdue = await dbContext.WaterBills
-                .Where(b => b.Status != "overdue" && b.CreateDate <= cutoff)
-                .ToListAsync();
-
-            if (billsToOverdue.Any())
-            {
-                billsToOverdue.ForEach(b => b.Status = "overdue");
-                await dbContext.SaveChangesAsync();
-            }
-
             var query = from reading in dbContext.WaterReadings
                         join bill in dbContext.WaterBills
                             on reading.Id equals bill.ReadingId into billGroup
@@ -411,6 +403,60 @@ namespace EzConDo_Service.Implement
             }
 
             return await dtoQuery.ToListAsync();
+        }
+
+        public async Task UpdateOverdueWaterBillsAsync()
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-15);
+            var billsToOverdue = await dbContext.WaterBills
+                .Where(b => b.Status == "pending" && b.CreateDate <= cutoff)
+                .ToListAsync();
+
+            if (billsToOverdue.Any())
+            {
+                foreach (var bill in billsToOverdue)
+                {
+                    bill.Status = "overdue";
+
+                    var notification = new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = $"Quá hạn thanh toán tiền nước tháng {bill.CreateDate.Month}",
+                        Content = $"Quý cư dân thân mến, hóa đơn tiền điện tháng {bill.CreateDate.Month} ({bill.TotalAmount:N0} VND) đã quá hạn thanh toán. " +
+                                  "Vui lòng thực hiện thanh toán trong thời gian sớm nhất để đảm bảo quyền lợi và tránh các gián đoạn không mong muốn.",
+                        Type = "Notice",
+                        CreatedBy = bill.CustomerId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    dbContext.Notifications.Add(notification);
+
+                    var receiver = new NotificationReceiver
+                    {
+                        Id = Guid.NewGuid(),
+                        NotificationId = notification.Id,
+                        UserId = bill.CustomerId,
+                        Receiver = "resident",
+                        IsRead = false,
+                        ReadAt = null
+                    };
+                    dbContext.NotificationReceivers.Add(receiver);
+
+                    var deviceTokens = await dbContext.UserDevices
+                        .Where(ud => ud.UserId == bill.CustomerId && ud.IsActive)
+                        .Select(ud => ud.FcmToken)
+                        .ToListAsync();
+
+                    if (deviceTokens.Any())
+                    {
+                        await firebasePush.SendPushNotificationAsync(
+                            notification.Title,
+                            notification.Content,
+                            deviceTokens);
+                    }
+                }
+                await dbContext.SaveChangesAsync();
+            }
         }
 
         public async Task<WaterDetailDTO> GetWaterDetailAsync(Guid waterReadingId)

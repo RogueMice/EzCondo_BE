@@ -20,5 +20,13 @@ namespace EzConDo_Service.Interface
         Task<string> UpdateParkingLotDetailAsync(UpdateParkingLotDetailDTO dto);
 
         Task<Guid> DeleteParkingLotDetailAsync(Guid id);
+
+        Task UpdateOverdueParkingBillsAsync();
+
+        Task CreateRecurringParkingBillAsync(Guid previousInvoiceId);
+
+        Task<List<ParkingViewDTO>> GetAllParkingAsync(bool? status, int? day, int? month);
+
+        Task<List<ParkingLotViewDTO>> GetMyParkingAsync(Guid userId);
     }
 }

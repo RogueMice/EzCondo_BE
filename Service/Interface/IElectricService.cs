@@ -32,5 +32,7 @@ namespace EzConDo_Service.Interface
         Task<byte[]> CreateTemplateElectricReadingAsync();
 
         Task<string> UpdateElectricBillsAsync(List<UpdateElectricBillDTO> dtos);
+
+        Task UpdateOverdueElectricBillsAsync();
     }
 }

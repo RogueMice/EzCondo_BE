@@ -27,6 +27,24 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "Manager")]
+        [HttpGet("Get-All-Parking")]
+        public async Task<IActionResult> GetAllParking([FromQuery] bool? status, int? day, int? month)
+        {
+            var result = await parkingLotService.GetAllParkingAsync(status,day,month);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
+        [HttpGet("Get-My-Parking-Lot")]
+        public async Task<IActionResult> GetMyParkingLots()
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
+            Guid.TryParse(userId, out var user_Id);
+            var result = await parkingLotService.GetMyParkingAsync(user_Id);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "ManagerOrResident")]
         [HttpGet("Get-Parking-Lot-Detail")]
         public async Task<IActionResult> GetParkingLotDetail([FromQuery] Guid parkingLotId)
         {

@@ -21,6 +21,7 @@ using EzCondo_Data.Domain;
 using EzConDo_Service.SignalR_Integration;
 using EzCondo_Data.Context;
 using EzConDo_Service.PayOsIntergration;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -157,11 +158,35 @@ builder.Services.AddAuthorization(options =>
                 c.Type.ToLower() == ClaimTypes.Role.ToLower() &&
                 (c.Value.ToLower() == "admin" || c.Value.ToLower() == "manager")));
     });
+    options.AddPolicy("ManagerOrResident", policy =>
+    {
+        policy.RequireAssertion(context =>
+            context.User.HasClaim(c =>
+                c.Type.ToLower() == ClaimTypes.Role.ToLower() &&
+                (c.Value.ToLower() == "resident" || c.Value.ToLower() == "manager")));
+    });
 });
 
 //Configure Connection String
 builder.Services.AddDbContext<EzCondo_Data.Context.ApartmentDbContext>(options =>
                                                         options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+//Config Hangfire use SQL Server
+builder.Services.AddHangfire(config =>
+    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+          .UseSimpleAssemblyNameTypeSerializer()
+          .UseRecommendedSerializerSettings()
+          .UseSqlServerStorage(builder.Configuration.GetConnectionString("Default"), new Hangfire.SqlServer.SqlServerStorageOptions
+          {
+              CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+              SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+              QueuePollInterval = TimeSpan.FromSeconds(15),
+              UseRecommendedIsolationLevel = true,
+              DisableGlobalLocks = true
+          }));
+
+// Add Hangfire background
+builder.Services.AddHangfireServer();
 
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -242,5 +267,40 @@ app.MapHub<NotificationHub>("/notificationHub");
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
+
+// Use Hangfire dashboard
+app.UseHangfireDashboard();
+
+//Các job tự động 
+//Water 
+RecurringJob.AddOrUpdate<IWaterService>(
+    "water-bills-overdue-job",
+    svc => svc.UpdateOverdueWaterBillsAsync(),
+    Cron.Daily(hour: 0, minute: 0),
+    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+);
+
+//Electric
+RecurringJob.AddOrUpdate<IElectricService>(
+    "electric-bills-overdue-job",
+    svc => svc.UpdateOverdueElectricBillsAsync(),
+    Cron.Daily(hour: 0, minute: 0),
+    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+);
+
+//Parking Lot
+RecurringJob.AddOrUpdate<IParkingLotService>(
+    "parking-bills-overdue-job",
+    svc => svc.UpdateOverdueParkingBillsAsync(),
+    Cron.Daily(hour: 0, minute: 0),
+    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+);
+
+RecurringJob.AddOrUpdate<IParkingLotService>(
+    "parking-bills-overdue-job",
+    svc => svc.UpdateOverdueParkingBillsAsync(),
+    Cron.Daily(hour: 0, minute: 0),
+    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+);
 
 app.Run();
