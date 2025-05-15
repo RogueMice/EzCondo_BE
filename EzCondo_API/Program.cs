@@ -303,4 +303,11 @@ RecurringJob.AddOrUpdate<IParkingLotService>(
     TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
 );
 
+//Ngày đầu mỗi tháng sẽ có hóa đơn
+RecurringJob.AddOrUpdate<IParkingLotService>(
+       "GenerateMonthlyParkingBills",
+       svc => svc.GenerateMonthlyBillsAsync(),
+       Cron.Monthly(day: 1, hour: 0, minute: 0)
+   );
+
 app.Run();

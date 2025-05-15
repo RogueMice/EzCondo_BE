@@ -164,11 +164,11 @@ namespace EzConDo_Service.Implement
             return await CreatePaymentLink(payment.Id, (int)payment.Amount, "nuoc");
         }
 
-        public async Task<object> CreatePaymentForParkingAsync(Guid parkingId, Guid userId)
+        public async Task<object> CreatePaymentForParkingAsync(Guid Id, Guid userId)
         {
-            var payment = dbContext.Payments
-                .FirstOrDefault(p => p.ParkingId == parkingId)
-                ?? throw new NotFoundException($"Id {parkingId} is not found!");
+            var payment = await dbContext.Payments
+                .FirstOrDefaultAsync(p => p.Id == Id && p.Status.ToLower() == "pending")
+                ?? throw new NotFoundException($"Id {Id} is not found!");
 
             //generate QR code
 
@@ -314,9 +314,51 @@ namespace EzConDo_Service.Implement
 
             var result = await query
                 .OrderByDescending(p => p.CreateDate)
+                .Where(p => p.Status == "completed")
                 .Select(p => new MyPaymentViewDTO
                 {
-                    Id = p.Id,
+                    PaymentId = p.Id,
+                    FullName = p.User.FullName,
+                    BookingId = p.BookingId,
+                    ElectricId = p.ElectricBillId,
+                    ParkingId = p.ParkingId,
+                    WaterId = p.WaterBillId,
+                    ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
+                    Amount = p.Amount,
+                    CreateDate = p.CreateDate,
+                    Type = p.Booking != null ? "Booking"
+                         : p.ElectricBill != null ? "Electric"
+                         : p.WaterBill != null ? "Water"
+                         : p.Parking != null ? "Parking"
+                         : "Other",
+                    Status = p.Status
+                })
+                .ToListAsync();
+            return result;
+        }
+
+        public async Task<List<MyPaymentViewDTO>> GetNeedMyPaymentsAsync(Guid userId)
+        {
+            var query = dbContext.Payments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Apartments)
+                .Include(p => p.Booking)
+                .Include(p => p.ElectricBill)
+                .Include(p => p.WaterBill)
+                .Include(p => p.Parking)
+                .Where(p => p.UserId == userId)
+                .AsQueryable();
+
+            var result = await query
+                .OrderByDescending(p => p.CreateDate)
+                .Where(p => p.Status.ToLower() != "completed")
+                .Select(p => new MyPaymentViewDTO
+                {
+                    PaymentId = p.Id,
+                    BookingId = p.BookingId,
+                    ElectricId = p.ElectricBillId,
+                    ParkingId = p.ParkingId,
+                    WaterId = p.WaterBillId,
                     FullName = p.User.FullName,
                     ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
                     Amount = p.Amount,

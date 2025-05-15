@@ -27,6 +27,14 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "Manager")]
+        [HttpGet("Get-All-Parking-Lot-Request")]
+        public async Task<IActionResult> GetAllParkingLotRequest()
+        {
+            var result = await parkingLotService.GetAllParkingLotRequestAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Parking")]
         public async Task<IActionResult> GetAllParking([FromQuery] bool? status, int? day, int? month)
         {

@@ -52,8 +52,8 @@ namespace EzCondo_API.Controllers
             return Ok(waterDetail);
         }
 
-        [HttpGet("Get-My-Electric-Detail")]
-        public async Task<IActionResult> GetMyElectricDetail([FromQuery] bool? status)
+        [HttpGet("Get-My-Water-Detail")]
+        public async Task<IActionResult> GetMyWaterDetail([FromQuery] bool? status)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null)

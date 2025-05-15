@@ -13,6 +13,8 @@ namespace EzConDo_Service.Interface
 
         Task<List<ParkingLotViewDTO>> GetAllParkingLotsAsync();
 
+        Task<List<ParkingLotViewDTO>> GetAllParkingLotRequestAsync();
+
         Task<string> UpdateOrDeleteAsync(ParkingLotAcceptOrRejectDTO dto);
 
         Task<List<ParkingLotDetailViewDTO>> GetParkingDetailAsync(Guid parkingLotId);
@@ -28,5 +30,7 @@ namespace EzConDo_Service.Interface
         Task<List<ParkingViewDTO>> GetAllParkingAsync(bool? status, int? day, int? month);
 
         Task<List<ParkingLotViewDTO>> GetMyParkingAsync(Guid userId);
+
+        Task GenerateMonthlyBillsAsync();
     }
 }

@@ -8,7 +8,16 @@ namespace EzConDo_Service.DTO
 {
     public class MyPaymentViewDTO
     {
-        public Guid Id { get; set; }
+        public Guid PaymentId { get; set; }
+
+        public Guid? BookingId { get; set; }
+
+
+        public Guid? ElectricId { get; set; }
+
+        public Guid? WaterId { get; set; }
+
+        public Guid? ParkingId { get; set; }
 
         public string ApartmentNumber { get; set; }
 

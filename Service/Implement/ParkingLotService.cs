@@ -30,53 +30,56 @@ namespace EzConDo_Service.Implement
         public async Task<List<Guid>> AddParkingLotAsync(ParkingCardRequestDTO dtos, Guid userId)
         {
             if (dtos == null)
-                throw new BadRequestException("Request body can't empty !");
+                throw new BadRequestException("Request body can't be empty!");
+
             int motors = dtos.NumberOfMotorbikes ?? 0;
             int cars = dtos.NumberOfCars ?? 0;
             int total = motors + cars;
             if (total == 0)
-                throw new BadRequestException("You need to provide at least one card to create ! ");
+                throw new BadRequestException("You need to provide at least one card to create!");
 
-            //ParkingLot 
-            var parkingLotId = Guid.NewGuid();
-            var parkingLot = new ParkingLot
+            // 1. Lấy hoặc tạo mới ParkingLot
+            var parkingLot = await dbContext.ParkingLots
+                .FirstOrDefaultAsync(pl => pl.UserId == userId);
+
+            if (parkingLot == null)
             {
-                Id = parkingLotId,
-                UserId = userId,
-                Accept = false
-            };
+                parkingLot = new ParkingLot
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Accept = false
+                };
+                await dbContext.ParkingLots.AddAsync(parkingLot);
+            }
 
-            //ParkingLotDetail
+            // 2. Tạo danh sách ParkingLotDetail
             var details = new List<ParkingLotDetail>(total);
             for (int i = 0; i < motors; i++)
-            {
                 details.Add(new ParkingLotDetail
                 {
                     Id = Guid.NewGuid(),
+                    ParkingLotId = parkingLot.Id,
                     Type = "motor",
                     Status = "pending",
-                    Checking = false,
-                    ParkingLotId = parkingLotId
+                    Checking = false
                 });
-            }
             for (int i = 0; i < cars; i++)
-            {
                 details.Add(new ParkingLotDetail
                 {
                     Id = Guid.NewGuid(),
+                    ParkingLotId = parkingLot.Id,
                     Type = "car",
                     Status = "pending",
-                    Checking = false,
-                    ParkingLotId = parkingLotId
+                    Checking = false
                 });
-            }
 
+            // 3. Thêm details với tắt AutoDetectChanges để tăng performance
             var tracker = dbContext.ChangeTracker;
             bool prevAutoDetect = tracker.AutoDetectChangesEnabled;
             try
             {
                 tracker.AutoDetectChangesEnabled = false;
-                await dbContext.ParkingLots.AddAsync(parkingLot);
                 await dbContext.ParkingLotDetails.AddRangeAsync(details);
                 await dbContext.SaveChangesAsync();
             }
@@ -84,6 +87,12 @@ namespace EzConDo_Service.Implement
             {
                 tracker.AutoDetectChangesEnabled = prevAutoDetect;
             }
+
+            //update accept = false
+            parkingLot.Accept = false;
+            await dbContext.SaveChangesAsync();
+
+            // 4. Trả về danh sách IDs của các thẻ vừa tạo
             return details.Select(d => d.Id).ToList();
         }
 
@@ -91,7 +100,8 @@ namespace EzConDo_Service.Implement
         {
             var flat = await dbContext.ParkingLotDetails
                 .AsNoTracking()
-                .Select(d => new
+                .Where(d => d.Status != "pending")
+                .Select(d => new 
                 {
                     ParkingId = d.ParkingLot.Id,
                     FullName = d.ParkingLot.User.FullName,
@@ -113,7 +123,7 @@ namespace EzConDo_Service.Implement
                     Apartment = g.First().Apartment,
                     NumberOfMotorbike = g.Count(x => x.Type == "motor"),
                     NumberOfCar = g.Count(x => x.Type == "car"),
-                    Accept = g.First().Accept
+                    Accept = g.Select(x => x.Accept).FirstOrDefault()
                 })
                 .ToList();
 
@@ -142,11 +152,6 @@ namespace EzConDo_Service.Implement
                 // transaction
                 await using var tx = await dbContext.Database.BeginTransactionAsync();
 
-                //Bulk-update status
-                var updatedCount = await detailQuery.ExecuteUpdateAsync(s => s
-                    .SetProperty(d => d.Status, _ => "active")
-                );
-
                 //Get Price
                 var price = await dbContext.PriceParkingLots
                     .AsNoTracking()
@@ -156,6 +161,7 @@ namespace EzConDo_Service.Implement
 
                 // total price
                 var details = await detailQuery
+                    .Where(d => d.Status != "active")
                     .Select(d => new { d.Type })
                     .ToListAsync();
 
@@ -164,6 +170,11 @@ namespace EzConDo_Service.Implement
                         ? (price.PricePerOto ?? throw new ConflictException("PricePerOto is null."))
                         : (price.PricePerMotor ?? throw new ConflictException("PricePerMotor is null.")));
 
+                //Bulk-update status
+                var updatedCount = await detailQuery.ExecuteUpdateAsync(s => s
+                    .SetProperty(d => d.Status, _ => "active")
+                );
+
                 // get UserId
                 var userId = await dbContext.ParkingLots
                     .Where(pl => pl.Id == dto.ParkingLotId)
@@ -171,26 +182,61 @@ namespace EzConDo_Service.Implement
                     .FirstOrDefaultAsync()
                     ?? throw new ConflictException("UserId for this parking lot is null.");
 
-                //Tạo Payment
-                var invoice = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    ParkingId = dto.ParkingLotId,
-                    Amount = totalAmount,
-                    Status = "pending",
-                    Method = "VietQR",
-                    CreateDate = DateTime.UtcNow
-                };
-                await dbContext.Payments.AddAsync(invoice);
-                await dbContext.SaveChangesAsync();
+                    //Tạo Payment
+                    var invoice = new Payment
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        ParkingId = dto.ParkingLotId,
+                        Amount = totalAmount,
+                        Status = "pending",
+                        Method = "VietQR",
+                        CreateDate = DateTime.UtcNow
+                    };
+                    await dbContext.Payments.AddAsync(invoice);
+                    await dbContext.SaveChangesAsync();
 
-                //Cho chạy tự động, nếu sau 30 ngày hóa đơn được tạo đã thanh toán thì tạo hóa đơn mới
+                //Cho chạy tự động, ngày đầu mỗi tháng tạo 1 hóa đơn mới dựa trên tất cả các thẻ của parkingId
                 BackgroundJob.Schedule<IParkingLotService>(
                         svc => svc.CreateRecurringParkingBillAsync(invoice.Id),
                         TimeSpan.FromDays(30)
                     );
+                //Send real-time to resident
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    Title = $"Yêu cầu vé xe của bạn đã được phê duyệt",
+                    Content = $"Chúng tôi xin thông báo rằng yêu cầu đăng ký vé xe của bạn tại bãi đỗ xe của chung cư đã được phê duyệt thành công. Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.",
+                    Type = "Notice",
+                    CreatedBy = parkingLot.UserId.Value,
+                    CreatedAt = DateTime.UtcNow
+                };
 
+                await dbContext.Notifications.AddAsync(notification);
+
+                dbContext.NotificationReceivers.Add(new NotificationReceiver
+                {
+                    Id = Guid.NewGuid(),
+                    NotificationId = notification.Id,
+                    UserId = parkingLot.UserId.Value,
+                    Receiver = "resident",
+                    IsRead = false,
+                    ReadAt = null
+                });
+                var deviceTokens = await dbContext.UserDevices
+                    .Where(ud => ud.UserId == parkingLot.UserId && ud.IsActive)
+                    .Select(ud => ud.FcmToken)
+                    .ToListAsync();
+
+                if (deviceTokens.Any())
+                {
+                    await firebasePush.SendPushNotificationAsync(
+                        notification.Title,
+                        notification.Content,
+                        deviceTokens);
+                }
+
+                await dbContext.SaveChangesAsync();
                 // Commit
                 await tx.CommitAsync();
 
@@ -198,11 +244,12 @@ namespace EzConDo_Service.Implement
             }
             else
             {
-                var deletedDetails = await detailQuery.ExecuteDeleteAsync();
-
+                await using var tx = await dbContext.Database.BeginTransactionAsync();
+                var deletedCount = await detailQuery.ExecuteDeleteAsync();
                 dbContext.ParkingLots.Remove(parkingLot);
-                await dbContext.SaveChangesAsync();
-                return $"Reject success: deleted {deletedDetails} card(s) and parking lot {dto.ParkingLotId}.";
+
+                await tx.CommitAsync();
+                return $"Reject success: deleted {deletedCount} card(s) and parking lot {dto.ParkingLotId}.";
             }
         }
 
@@ -379,12 +426,6 @@ namespace EzConDo_Service.Implement
 
             await dbContext.Payments.AddAsync(newPayment);
             await dbContext.SaveChangesAsync();
-
-            // Lập tiếp hoá đơn sau 30 ngày nữa
-            BackgroundJob.Schedule<IParkingLotService>(
-                svc => svc.CreateRecurringParkingBillAsync(newPayment.Id),
-                TimeSpan.FromDays(30)
-            );
         }
 
         public async Task<List<ParkingViewDTO>> GetAllParkingAsync(bool? status, int? day, int? month)
@@ -460,6 +501,80 @@ namespace EzConDo_Service.Implement
                     NumberOfMotorbike = g.Count(x => x.Type == "motor"),
                     NumberOfCar = g.Count(x => x.Type == "car"),
                     Accept = g.First().Accept
+                })
+                .ToList();
+
+            return grouped;
+        }
+
+        public async Task GenerateMonthlyBillsAsync() //Đúng ngày đầu mỗi tháng sẽ có hóa đơn
+        {
+            // Lấy tất cả các parking lot hiện có
+            var parkingLots = await dbContext.ParkingLots
+                .Select(p => new { p.Id, p.UserId })
+                .ToListAsync();
+
+            var price = await dbContext.PriceParkingLots.AsNoTracking().FirstOrDefaultAsync()
+                       ?? throw new Exception("Price config not found");
+
+            foreach (var lot in parkingLots)
+            {
+                // Tính tổng số thẻ và tiền
+                var details = await dbContext.ParkingLotDetails
+                    .Where(d => d.ParkingLotId == lot.Id && d.Status == "active")
+                    .Select(d => d.Type)
+                    .ToListAsync();
+
+                decimal total = details.Sum(type =>
+                    type == "car" ? (price.PricePerOto ?? 0)
+                                  : (price.PricePerMotor ?? 0)
+                );
+
+                var invoice = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = lot.UserId.Value,
+                    ParkingId = lot.Id,
+                    Amount = total,
+                    Status = "pending",
+                    Method = "VietQR",
+                    CreateDate = DateTime.UtcNow
+                };
+
+                await dbContext.Payments.AddAsync(invoice);
+            }
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        public async Task<List<ParkingLotViewDTO>> GetAllParkingLotRequestAsync()
+        {
+            var flat = await dbContext.ParkingLotDetails
+                .AsNoTracking()
+                .Where(d => d.Status == "pending")
+                .Select(d => new
+                {
+                    ParkingId = d.ParkingLot.Id,
+                    FullName = d.ParkingLot.User.FullName,
+                    Apartment = d.ParkingLot.User.Apartments
+                                        .OrderBy(a => a.Id)
+                                        .Select(a => a.ApartmentNumber)
+                                        .FirstOrDefault(),
+                    Type = d.Type,
+                    Accept = d.ParkingLot.Accept
+                })
+                .ToListAsync();
+
+            var grouped = flat
+                .GroupBy(x => x.ParkingId)
+                .Select(g => new ParkingLotViewDTO
+                {
+                    ParkingId = g.Key,
+                    Name = g.First().FullName,
+                    Apartment = g.First().Apartment,
+                    NumberOfMotorbike = g.Count(x => x.Type == "motor"),
+                    NumberOfCar = g.Count(x => x.Type == "car"),
+                    Accept = g.Select(x => x.Accept).FirstOrDefault()
                 })
                 .ToList();
 

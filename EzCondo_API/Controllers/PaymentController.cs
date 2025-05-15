@@ -54,6 +54,16 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "Resident")]
+        [HttpGet("Need-My-Payment")]
+        public async Task<IActionResult> GetMyNeedPayments()
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
+            Guid.TryParse(userId, out var user_Id);
+            var result = await paymentService.GetNeedMyPaymentsAsync(user_Id);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Resident")]
         [HttpPost("Create-QR-Booking-Payment")]
         public async Task<IActionResult> CreatePaymentForBooking([FromQuery] Guid bookingId)
         {
@@ -83,11 +93,11 @@ namespace EzCondo_API.Controllers
 
         [Authorize(Policy = "Resident")]
         [HttpPost("Create-QR-Parking-Payment")]
-        public async Task<IActionResult> CreatePaymentForParking([FromQuery] Guid parkingId)
+        public async Task<IActionResult> CreatePaymentForParking([FromQuery] Guid paymentId)
         {
             var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new Exception("Token invalid");
             Guid.TryParse(userId, out var user_Id);
-            var result = await paymentService.CreatePaymentForParkingAsync(parkingId, user_Id);
+            var result = await paymentService.CreatePaymentForParkingAsync(paymentId, user_Id);
             return Ok(result);
         }
 
