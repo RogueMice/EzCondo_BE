@@ -19,6 +19,15 @@ namespace EzCondo_API.Controllers
             this.houseHoldMemberService = houseHoldMemberService;
         }
 
+
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("dash-board-members")]
+        public async Task<IActionResult> GetAllHoldHouseMember()
+        {
+            var result = await houseHoldMemberService.GetHoldHouseMemberAsync();
+            return Ok(result);
+        }
+
         [Authorize(Policy = "Resident")]
         [HttpGet("get-my-house-hold-member")]
         public async Task<IActionResult> GetMyHoldHouseMember()

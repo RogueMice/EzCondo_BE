@@ -40,6 +40,8 @@ public partial class ApartmentDbContext : DbContext
 
     public virtual DbSet<NotificationReceiver> NotificationReceivers { get; set; }
 
+    public virtual DbSet<OtherService> OtherServices { get; set; }
+
     public virtual DbSet<ParkingLot> ParkingLots { get; set; }
 
     public virtual DbSet<ParkingLotDetail> ParkingLotDetails { get; set; }
@@ -270,6 +272,9 @@ public partial class ApartmentDbContext : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
+            entity.Property(e => e.CreateAt)
+                .HasColumnType("datetime")
+                .HasColumnName("create_at");
             entity.Property(e => e.FullName)
                 .HasMaxLength(50)
                 .HasColumnName("full_name");
@@ -416,6 +421,26 @@ public partial class ApartmentDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.NotificationReceivers)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK__Notificat__user___2739D489");
+        });
+
+        modelBuilder.Entity<OtherService>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__OtherSer__3213E83F71775156");
+
+            entity.ToTable("OtherService");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(18, 0)")
+                .HasColumnName("price");
         });
 
         modelBuilder.Entity<ParkingLot>(entity =>

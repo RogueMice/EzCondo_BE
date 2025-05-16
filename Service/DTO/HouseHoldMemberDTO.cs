@@ -23,5 +23,7 @@ namespace EzConDo_Service.DTO
         public string PhoneNumber { get; set; } = null!;
 
         public string Relationship { get; set; } = null!;
+
+        public DateTime Create_At { get; set; }
     }
 }

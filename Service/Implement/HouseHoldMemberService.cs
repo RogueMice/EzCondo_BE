@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static EzConDo_Service.ExceptionsConfig.CustomException;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace EzConDo_Service.Implement
 {
@@ -52,6 +53,8 @@ namespace EzConDo_Service.Implement
                 houseHoldMember.Gender = houseHoldMemberDTO.Gender;
                 houseHoldMember.PhoneNumber = houseHoldMemberDTO.PhoneNumber;
                 houseHoldMember.Relationship = houseHoldMemberDTO.Relationship;
+                houseHoldMember.CreateAt = DateTime.UtcNow;
+                
                 houseHoldMember.UserId = apartment.UserId ?? throw new InvalidOperationException("Apartment UserId cannot be null.");
                 dbContext.HouseHoldMembers.Add(houseHoldMember);
 
@@ -144,6 +147,49 @@ namespace EzConDo_Service.Implement
             return houseHoldMembersTask;
         }
 
+        public async Task<HouseHoldMemberDashBoardDTO> GetHoldHouseMemberAsync()
+        {
+            var today = DateTime.UtcNow.Date;
+            int diffToMonday = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            var startOfThisWeek = today.AddDays(-diffToMonday);
+            var endOfLastWeek = startOfThisWeek.AddDays(-1);
+            var endOfThisWeek = today;
 
+            //Tổng cư dân tích lũy đến hết tuần trước
+            var totalLastWeekOwners = await dbContext.Users
+                .CountAsync(u => u.CreateAt <= endOfLastWeek);
+            var totalLastWeekMembers = await dbContext.HouseHoldMembers
+                .CountAsync(m => m.CreateAt <= endOfLastWeek);
+            var totalLastWeek = totalLastWeekOwners + totalLastWeekMembers;
+
+            // Tổng cư dân tích lũy đến hết tuần này
+            var totalThisWeekOwners = await dbContext.Users
+                .CountAsync(u => u.CreateAt <= endOfThisWeek);
+            var totalThisWeekMembers = await dbContext.HouseHoldMembers
+                .CountAsync(m => m.CreateAt <= endOfThisWeek);
+            var totalThisWeek = totalThisWeekOwners + totalThisWeekMembers;
+
+            // Tính growth rate dựa trên tổng tích lũy
+            double growthRate;
+            if (totalLastWeek > 0)
+                growthRate = (double)(totalThisWeek - totalLastWeek) / totalLastWeek * 100;
+            else if (totalThisWeek > 0)
+                growthRate = 100.0;
+            else
+                growthRate = 0.0;
+            growthRate = Math.Round(growthRate, 1);
+
+            //Mô tả xu hướng
+            var trend = growthRate >= 0
+                ? $"Increased by {growthRate}% compared to last week"
+                : $"Decreased by {Math.Abs(growthRate)}% compared to last week";
+
+            return new HouseHoldMemberDashBoardDTO
+            {
+                TotalResidents = totalThisWeek,
+                GrowthRatePercent = growthRate,
+                TrendDescription = trend
+            };
+        }
     }
 }

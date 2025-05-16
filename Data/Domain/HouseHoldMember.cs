@@ -21,5 +21,7 @@ public partial class HouseHoldMember
 
     public Guid UserId { get; set; }
 
+    public DateTime? CreateAt { get; set; }
+
     public virtual User User { get; set; } = null!;
 }
