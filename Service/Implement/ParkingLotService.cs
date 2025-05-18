@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using static EzConDo_Service.ExceptionsConfig.CustomException;
@@ -101,7 +102,7 @@ namespace EzConDo_Service.Implement
             var flat = await dbContext.ParkingLotDetails
                 .AsNoTracking()
                 .Where(d => d.Status != "pending")
-                .Select(d => new 
+                .Select(d => new
                 {
                     ParkingId = d.ParkingLot.Id,
                     FullName = d.ParkingLot.User.FullName,
@@ -182,19 +183,19 @@ namespace EzConDo_Service.Implement
                     .FirstOrDefaultAsync()
                     ?? throw new ConflictException("UserId for this parking lot is null.");
 
-                    //Tạo Payment
-                    var invoice = new Payment
-                    {
-                        Id = Guid.NewGuid(),
-                        UserId = userId,
-                        ParkingId = dto.ParkingLotId,
-                        Amount = totalAmount,
-                        Status = "pending",
-                        Method = "VietQR",
-                        CreateDate = DateTime.UtcNow
-                    };
-                    await dbContext.Payments.AddAsync(invoice);
-                    await dbContext.SaveChangesAsync();
+                //Tạo Payment
+                var invoice = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    ParkingId = dto.ParkingLotId,
+                    Amount = totalAmount,
+                    Status = "pending",
+                    Method = "VietQR",
+                    CreateDate = DateTime.UtcNow
+                };
+                await dbContext.Payments.AddAsync(invoice);
+                await dbContext.SaveChangesAsync();
 
                 //Cho chạy tự động, ngày đầu mỗi tháng tạo 1 hóa đơn mới dựa trên tất cả các thẻ của parkingId
                 BackgroundJob.Schedule<IParkingLotService>(
@@ -289,8 +290,8 @@ namespace EzConDo_Service.Implement
             if (dto.Status.HasValue)
             {
                 parkingDetail.Status = dto.Status.Value
-                    ? "active"   
-                    : "inactive"; 
+                    ? "active"
+                    : "inactive";
                 isUpdated = true;
             }
             if (dto.Checking.HasValue)
@@ -307,7 +308,7 @@ namespace EzConDo_Service.Implement
 
         public async Task<Guid> DeleteParkingLotDetailAsync(Guid id)
         {
-            var parkingLotDetail = await dbContext.ParkingLotDetails.FirstOrDefaultAsync(pd => pd.Id == id) 
+            var parkingLotDetail = await dbContext.ParkingLotDetails.FirstOrDefaultAsync(pd => pd.Id == id)
                 ?? throw new NotFoundException($"Not found parking lot detail {id}");
             var parkingLot = await dbContext.ParkingLots
                 .FirstOrDefaultAsync(pl => pl.Id == parkingLotDetail.ParkingLotId)
@@ -394,7 +395,7 @@ namespace EzConDo_Service.Implement
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == previousInvoiceId && p.Status == "completed");
 
-            if (old == null) return; 
+            if (old == null) return;
 
             // Lấy lại các thông tin cần
             var parkingLotId = old.ParkingId ?? throw new Exception("Missing ParkingLotId");
@@ -579,6 +580,65 @@ namespace EzConDo_Service.Implement
                 .ToList();
 
             return grouped;
+        }
+
+        public async Task<GenerateDashboardDTO> GetParkingDashboardAsync()
+        {
+            var today = DateTime.UtcNow.Date;
+            int diffToMonday = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+            var startOfThisWeek = today.AddDays(-diffToMonday);
+            var endOfThisWeek = startOfThisWeek.AddDays(6);
+
+            var startOfLastWeek = startOfThisWeek.AddDays(-7);
+            var endOfLastWeek = startOfThisWeek.AddDays(-1);
+
+            // Payments tuần trước
+            var parkingIdsLastWeek = await dbContext.Payments
+                .Where(p => p.ParkingId.HasValue
+                         && p.CreateDate.Date >= startOfLastWeek
+                         && p.CreateDate.Date <= endOfLastWeek)
+                .Select(p => p.ParkingId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            // Payments tuần này
+            var parkingIdsThisWeek = await dbContext.Payments
+                .Where(p => p.ParkingId.HasValue
+                         && p.CreateDate.Date >= startOfThisWeek
+                         && p.CreateDate.Date <= endOfThisWeek)
+                .Select(p => p.ParkingId.Value)
+                .Distinct()
+                .ToListAsync();
+
+            // Đếm số lượng thẻ (ParkingDetails) liên quan tới các ParkingId mỗi tuần
+            var cardCountLastWeek = await dbContext.ParkingLotDetails
+                .Where(d => d.Status.ToLower() != "pending")
+                .CountAsync(d => parkingIdsLastWeek.Contains(d.ParkingLotId.Value));
+
+            var cardCountThisWeek = await dbContext.ParkingLotDetails
+                .Where(d => d.Status.ToLower() != "pending")
+                .CountAsync(d => parkingIdsThisWeek.Contains(d.ParkingLotId.Value));
+
+            // Tính tăng/giảm
+            int delta = cardCountThisWeek - cardCountLastWeek;
+            double growthRate;
+            if (cardCountLastWeek > 0)
+                growthRate = Math.Round(delta * 100.0 / cardCountLastWeek, 1);
+            else
+                growthRate = cardCountThisWeek > 0 ? 100.0 : 0.0;
+
+            var trend = growthRate >= 0
+                ? "Increased compared to last week"
+                : "Decreased compared to last week";
+
+            return new GenerateDashboardDTO
+            {
+                Total = cardCountThisWeek,
+                Increase = delta,
+                GrowthRatePercent = growthRate,
+                TrendDescription = trend
+            };
         }
     }
 }

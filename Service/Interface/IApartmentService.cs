@@ -18,5 +18,7 @@ namespace EzConDo_Service.Interface
         Task<Guid?> AddApartmentAsync(ApartmentViewDTO apartmentDto);
 
         Task<string?> UpdateApartmentAsync(ApartmentUpdateDTO apartmentDto);
+
+        Task<GenerateDashboardDTO> GetApartmentDashBoardAsync();
     }
 }

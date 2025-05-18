@@ -73,7 +73,7 @@ namespace EzConDo_Service.Implement
                     .ThenInclude(u => u.Apartments)
                 .Include(p => p.Payments)
                 .Include(p => p.Service)
-                .Where(p => p.Status == "completed")
+                .Where(p => p.Status == "in_use" || p.Status == "completed")
                 .AsQueryable();
 
             // Filter for month
@@ -116,7 +116,7 @@ namespace EzConDo_Service.Implement
             var query = dbContext.Bookings
                 .Include(b => b.Service)
                 .Where(b => b.UserId == userId
-                && b.Status.ToLower() == "completed");
+                && b.Status.ToLower() == "completed" || b.Status == "in_use");
 
             var result = await query
                 .OrderByDescending(b => b.StartDate)
@@ -130,6 +130,25 @@ namespace EzConDo_Service.Implement
                 })
                 .ToListAsync();
             return result;
+        }
+
+        public async Task MarkExpiredBookingsAsCompletedAsync()
+        {
+            var now = DateTime.UtcNow;
+
+            var expiredBookings = await dbContext.Bookings
+                .Where(b => b.EndDate < now && b.Status != "completed")
+                .ToListAsync();
+
+            if (!expiredBookings.Any())
+                return;
+
+            foreach (var booking in expiredBookings)
+            {
+                booking.Status = "completed";
+            }
+
+            await dbContext.SaveChangesAsync();
         }
     }
 }

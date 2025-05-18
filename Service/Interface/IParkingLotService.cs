@@ -32,5 +32,7 @@ namespace EzConDo_Service.Interface
         Task<List<ParkingLotViewDTO>> GetMyParkingAsync(Guid userId);
 
         Task GenerateMonthlyBillsAsync();
+
+        Task<GenerateDashboardDTO> GetParkingDashboardAsync();
     }
 }

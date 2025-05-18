@@ -118,5 +118,61 @@ namespace EzConDo_Service.Implement
                 UserId = apartment.UserId
             };
         }
+
+        public async Task<GenerateDashboardDTO> GetApartmentDashBoardAsync()
+        {
+            // Múi giờ Việt Nam (UTC+7)
+            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            // Lấy ngày hiện tại theo giờ Việt Nam
+            var todayVN = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone).Date;
+
+            // Xác định Thứ Hai của tuần này (giờ VN)
+            int diffToMonday = ((int)todayVN.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            var startOfThisWeekVN = todayVN.AddDays(-diffToMonday);
+            var endOfThisWeekVN = startOfThisWeekVN.AddDays(7); // Exclusive
+
+            // Tuần trước
+            var startOfLastWeekVN = startOfThisWeekVN.AddDays(-7);
+            var endOfLastWeekVN = startOfThisWeekVN; // Exclusive
+
+            // Chuyển về UTC để so sánh trong database
+            var startOfThisWeekUtc = TimeZoneInfo.ConvertTimeToUtc(startOfThisWeekVN, vnTimeZone);
+            var endOfThisWeekUtc = TimeZoneInfo.ConvertTimeToUtc(endOfThisWeekVN, vnTimeZone);
+            var startOfLastWeekUtc = TimeZoneInfo.ConvertTimeToUtc(startOfLastWeekVN, vnTimeZone);
+            var endOfLastWeekUtc = TimeZoneInfo.ConvertTimeToUtc(endOfLastWeekVN, vnTimeZone);
+
+            // Đếm số lượng apartment tạo ra trong từng tuần
+            var apartmentLastWeek = await dbContext.Apartments
+                .CountAsync(a => a.User.CreateAt >= startOfLastWeekUtc
+                              && a.User.CreateAt < endOfLastWeekUtc);
+
+            var apartmentThisWeek = await dbContext.Apartments
+                .CountAsync(a => a.User.CreateAt >= startOfThisWeekUtc
+                              && a.User.CreateAt < endOfThisWeekUtc);
+
+            // Tính tăng/giảm
+            int delta = apartmentThisWeek - apartmentLastWeek;
+            double growthRate;
+            if (apartmentLastWeek > 0)
+                growthRate = Math.Round(delta * 100.0 / apartmentLastWeek, 1);
+            else
+                growthRate = apartmentThisWeek > 0 ? 100.0 : 0.0;
+
+            var trend = growthRate >= 0
+                ? $"Increased compared to last week"
+                : $"Decreased compared to last week";
+            var totalApartment = await dbContext.Apartments
+                .CountAsync();
+            // Build DTO
+            return new GenerateDashboardDTO
+            {
+                Total = Math.Round((double)apartmentThisWeek / totalApartment * 100, 1),
+                Increase = delta,
+                GrowthRatePercent = growthRate,
+                TrendDescription = trend
+            };
+        }
+
     }
 }

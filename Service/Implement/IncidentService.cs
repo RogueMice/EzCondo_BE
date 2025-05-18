@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using static EzConDo_Service.ExceptionsConfig.CustomException;
@@ -246,6 +247,52 @@ namespace EzConDo_Service.Implement
                 ?? throw new NotFoundException($"Incident id {incidentId} is not found!");
 
             return incident;
+        }
+
+        public async Task<GenerateDashboardDTO> GetIncidentDashboardAsync()
+        {
+            var today = DateTime.UtcNow.Date;
+
+            //  Xác định Thứ Hai của tuần này
+            int diffToMonday = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            var startOfThisWeek = today.AddDays(-diffToMonday);
+
+            //  Tuần trước chạy từ startOfLastWeek → endOfLastWeek
+            var startOfLastWeek = startOfThisWeek.AddDays(-7);
+            var endOfLastWeek = startOfThisWeek.AddDays(-1);
+
+            //  Kết thúc tuần này (tính đến Chủ Nhật)
+            var endOfThisWeek = startOfThisWeek.AddDays(6);
+
+            // Đếm số incident **trong** mỗi tuần (không phải tích lũy)
+            var incidentsLastWeek = await dbContext.Incidents
+                .CountAsync(i => i.ReportedAt.Date >= startOfLastWeek
+                               && i.ReportedAt.Date <= endOfLastWeek);
+
+            var incidentsThisWeek = await dbContext.Incidents
+                .CountAsync(i => i.ReportedAt.Date >= startOfThisWeek
+                               && i.ReportedAt.Date <= endOfThisWeek);
+
+            // Tính tăng/giảm
+            int delta = incidentsThisWeek - incidentsLastWeek;
+            double growthRate;
+            if (incidentsLastWeek > 0)
+                growthRate = Math.Round(delta * 100.0 / incidentsLastWeek, 1);
+            else
+                growthRate = incidentsThisWeek > 0 ? 100.0 : 0.0;
+
+            var trend = growthRate >= 0
+                ? $"Increased compared to last week"
+                : $"Decreased compared to last week";
+
+            // Build DTO
+            return new GenerateDashboardDTO
+            {
+                Total = incidentsThisWeek,  
+                Increase = delta,             
+                GrowthRatePercent = growthRate,
+                TrendDescription = trend
+            };
         }
     }
 }

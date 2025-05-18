@@ -20,6 +20,14 @@ namespace EzCondo_API.Controllers
             this.i_IncidentImage = i_IncidentImage;
         }
 
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("incident-dash-board")]
+        public async Task<IActionResult> GetIncidentDashBoard()
+        {
+            var incidents = await i_IncidentService.GetIncidentDashboardAsync();
+            return Ok(incidents);
+        }
+
         [Authorize(Policy = "Manager")]
         [HttpGet("get-all-incident")]
         public async Task<IActionResult> GetAllIncident()

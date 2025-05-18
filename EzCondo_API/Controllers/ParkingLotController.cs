@@ -18,6 +18,14 @@ namespace EzCondo_API.Controllers
             this.parkingLotService = parkingLotService;
         }
 
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("parking-dashboard")]
+        public async Task<IActionResult> GetParkingDashboard()
+        {
+            var result = await parkingLotService.GetParkingDashboardAsync();
+            return Ok(result);
+        }
+
         [Authorize(Policy = "Manager")]
         [HttpGet("Get-All-Parking-Lot")]
         public async Task<IActionResult> GetAllParkingLots()

@@ -76,7 +76,7 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 UserId = booking.UserId,
                 BookingId = booking.Id,
-                Amount = 5000, 
+                Amount = price, 
                 Status = "pending",
                 Method = "VietQR",
                 CreateDate = DateTime.UtcNow
@@ -85,7 +85,7 @@ namespace EzConDo_Service.Implement
             await dbContext.SaveChangesAsync();
 
             //generate QR code
-            return await CreatePaymentLink(payment.Id, (int)payment.Amount, booking.Service.ServiceName);
+            return await CreatePaymentLink(payment.Id, 5000, booking.Service.ServiceName);
         }
 
         public async Task<object> CreatePaymentForElectricAsync(Guid electricBillId, Guid userId)
@@ -105,7 +105,7 @@ namespace EzConDo_Service.Implement
 
             if (existingPayment != null)
             {
-                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, "dien");
+                return await CreatePaymentLink(existingPayment.Id, 5000, "dien");
             }
 
             var payment = new Payment
@@ -122,7 +122,7 @@ namespace EzConDo_Service.Implement
             await dbContext.Payments.AddAsync(payment);
             await dbContext.SaveChangesAsync();
 
-            var result = await CreatePaymentLink(payment.Id, (int)payment.Amount, "dien");
+            var result = await CreatePaymentLink(payment.Id, 5000, "dien");
 
             return result;
         }
@@ -143,7 +143,7 @@ namespace EzConDo_Service.Implement
 
             if (existingPayment != null)
             {
-                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, "nuoc");
+                return await CreatePaymentLink(existingPayment.Id, 5000, "nuoc");
             }
 
             //Create payment
@@ -152,7 +152,7 @@ namespace EzConDo_Service.Implement
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 WaterBillId = waterBillId,
-                Amount = 5000,//waterBill.TotalAmount, set default 5k nhớ sửa
+                Amount = waterBill.TotalAmount,//waterBill.TotalAmount, set default 5k nhớ sửa
                 Status = "pending",
                 Method = "VietQR",
                 CreateDate = DateTime.UtcNow
@@ -161,7 +161,7 @@ namespace EzConDo_Service.Implement
             await dbContext.SaveChangesAsync();
 
             //generate QR code
-            return await CreatePaymentLink(payment.Id, (int)payment.Amount, "nuoc");
+            return await CreatePaymentLink(payment.Id, 5000, "nuoc");
         }
 
         public async Task<object> CreatePaymentForParkingAsync(Guid Id, Guid userId)
@@ -186,7 +186,7 @@ namespace EzConDo_Service.Implement
             PaymentData paymentData = new PaymentData(
                 Math.Abs(newPaymentId.GetHashCode() & 0x7FFFFFFF),
                 amount,
-                "Thanh toan tien "+ serviceName,
+                serviceName,
                 items,
                 "Payment pailure",
                 "Payment success "
@@ -226,7 +226,7 @@ namespace EzConDo_Service.Implement
 
             payment.Status = newStatus;
             if (payment.Booking != null)
-                payment.Booking.Status = newStatus;
+                payment.Booking.Status = "in_use";
             else if (payment.ElectricBill != null)
                 payment.ElectricBill.Status = newStatus;
             else if (payment.WaterBill != null)
@@ -289,11 +289,11 @@ namespace EzConDo_Service.Implement
                     ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
                     Amount = p.Amount,
                     CreateDate = p.CreateDate,
-                    Type = p.Booking != null ? "Booking"
+                    Type = p.Booking != null ? $"Booking {p.Booking.Service.ServiceName}"
                          : p.ElectricBill != null ? "Electric"
                          : p.WaterBill != null ? "Water"
                          : p.Parking != null ? "Parking"
-                         : "Other"
+                         : "General Service"
                 })
                 .ToListAsync();
 
@@ -326,11 +326,11 @@ namespace EzConDo_Service.Implement
                     ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
                     Amount = p.Amount,
                     CreateDate = p.CreateDate,
-                    Type = p.Booking != null ? "Booking"
+                    Type = p.Booking != null ? $"Booking {p.Booking.Service.ServiceName}"
                          : p.ElectricBill != null ? "Electric"
                          : p.WaterBill != null ? "Water"
                          : p.Parking != null ? "Parking"
-                         : "Other",
+                         : "General Service",
                     Status = p.Status
                 })
                 .ToListAsync();
@@ -363,11 +363,11 @@ namespace EzConDo_Service.Implement
                     ApartmentNumber = p.User.Apartments.FirstOrDefault().ApartmentNumber,
                     Amount = p.Amount,
                     CreateDate = p.CreateDate,
-                    Type = p.Booking != null ? "Booking"
+                    Type = p.Booking != null ? $"Booking {p.Booking.Service.ServiceName}"
                          : p.ElectricBill != null ? "Electric"
                          : p.WaterBill != null ? "Water"
                          : p.Parking != null ? "Parking"
-                         : "Other",
+                         : "General Service",
                     Status = p.Status
                 })
                 .ToListAsync();

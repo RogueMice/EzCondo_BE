@@ -17,6 +17,6 @@ namespace EzConDo_Service.Interface
 
         Task<List<MyHouseHoldMemberDTO>> GetHoldHouseMemberByApartmentNumberAsync(string apartmentNumber);
 
-        Task<HouseHoldMemberDashBoardDTO> GetHoldHouseMemberAsync();
+        Task<GenerateDashboardDTO> GetHoldHouseMemberAsync();
     }
 }

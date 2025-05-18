@@ -304,11 +304,26 @@ RecurringJob.AddOrUpdate<IParkingLotService>(
     TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
 );
 
+
+RecurringJob.AddOrUpdate<IBookingService>(
+    "booking-status-completed-job",
+    svc => svc.MarkExpiredBookingsAsCompletedAsync(),
+    Cron.Daily(hour: 0, minute: 0),
+    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+);
+
 //Ngày đầu mỗi tháng sẽ có hóa đơn
 RecurringJob.AddOrUpdate<IParkingLotService>(
        "GenerateMonthlyParkingBills",
        svc => svc.GenerateMonthlyBillsAsync(),
        Cron.Monthly(day: 1, hour: 0, minute: 0)
    );
+
+//Ngày đầu mỗi tháng sẽ có hóa đơn
+RecurringJob.AddOrUpdate<IOtherService>(
+       "GenerateMonthlyOtherServiceBills",
+       svc => svc.GenerateMonthlyBillsAsync(),
+       Cron.Monthly(day: 1, hour: 0, minute: 0)
+ );
 
 app.Run();

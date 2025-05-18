@@ -18,6 +18,15 @@ namespace EzCondo_API.Controllers
             this.apartmentService = apartmentService;
         }
 
+        [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("apartment-dashboard")]
+        public async Task<IActionResult> GetApartmentDashboard()
+        {
+            var apartments = await apartmentService.GetApartmentDashBoardAsync();
+            return Ok(apartments);
+        }
+
+
         [Authorize(Policy = "Resident")]
         [HttpGet("get-my-apartment")]
         public async Task<IActionResult> GetMyApartment()

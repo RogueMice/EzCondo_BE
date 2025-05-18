@@ -67,9 +67,32 @@ namespace EzConDo_Service.Implement
 
         public async Task GenerateMonthlyBillsAsync() //Đúng ngày đầu mỗi tháng sẽ có hóa đơn
         {
-            //Total price of OtherService
+            var otherService = await dbContext.OtherServices.ToListAsync();
 
-            //
+            decimal total = 0;
+            foreach (var item in otherService)
+            {
+                total += item.Price.Value;
+            }
+
+            var resident = await dbContext.Users
+                .Where(u => u.Role.Name.ToLower() == "resident")
+                .ToListAsync();
+            foreach (var item in resident)
+            {
+                var invoice = new Payment
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = item.Id,
+                    Amount = total,
+                    Status = "pending",
+                    Method = "VietQR",
+                    CreateDate = DateTime.UtcNow
+                };
+                await dbContext.Payments.AddAsync(invoice);
+            }
+
+            await dbContext.SaveChangesAsync();
         }
     }
 }

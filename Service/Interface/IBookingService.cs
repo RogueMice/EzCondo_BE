@@ -14,5 +14,7 @@ namespace EzConDo_Service.Interface
         Task<List<BookingViewDTO>> GetAllBookingsAsync(string? search, int? month);
 
         Task<List<MyBookingViewDTO>> GetMyBookingAsync(Guid userId);
+
+        Task MarkExpiredBookingsAsCompletedAsync();
     }
 }

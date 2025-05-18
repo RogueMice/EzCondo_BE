@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using static EzConDo_Service.ExceptionsConfig.CustomException;
@@ -21,6 +22,7 @@ namespace EzConDo_Service.Implement
         {
             this.dbContext = dbContext;
         }
+
         public async Task<Guid?> AddOrUpdateAsync(HouseHoldMemberDTO houseHoldMemberDTO)
         {
             var apartment = dbContext.Apartments.FirstOrDefault(x => x.ApartmentNumber == houseHoldMemberDTO.ApartmentNumber) ?? throw new NotFoundException($"Apartment number: {houseHoldMemberDTO.ApartmentNumber} not found !");
@@ -147,48 +149,70 @@ namespace EzConDo_Service.Implement
             return houseHoldMembersTask;
         }
 
-        public async Task<HouseHoldMemberDashBoardDTO> GetHoldHouseMemberAsync()
+        public async Task<GenerateDashboardDTO> GetHoldHouseMemberAsync()
         {
-            var today = DateTime.UtcNow.Date;
-            int diffToMonday = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-            var startOfThisWeek = today.AddDays(-diffToMonday);
-            var endOfLastWeek = startOfThisWeek.AddDays(-1);
-            var endOfThisWeek = today;
+            // Determine Vietnam time zone
+            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
-            //Tổng cư dân tích lũy đến hết tuần trước
-            var totalLastWeekOwners = await dbContext.Users
-                .CountAsync(u => u.CreateAt <= endOfLastWeek);
-            var totalLastWeekMembers = await dbContext.HouseHoldMembers
-                .CountAsync(m => m.CreateAt <= endOfLastWeek);
-            var totalLastWeek = totalLastWeekOwners + totalLastWeekMembers;
+            // Get current date in Vietnam time
+            var todayInVietnam = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone).Date;
 
-            // Tổng cư dân tích lũy đến hết tuần này
-            var totalThisWeekOwners = await dbContext.Users
-                .CountAsync(u => u.CreateAt <= endOfThisWeek);
-            var totalThisWeekMembers = await dbContext.HouseHoldMembers
-                .CountAsync(m => m.CreateAt <= endOfThisWeek);
-            var totalThisWeek = totalThisWeekOwners + totalThisWeekMembers;
+            // Calculate the start of this week (Monday) and the exclusive end (next Monday) in Vietnam time
+            int daysSinceMonday = ((int)todayInVietnam.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+            var startOfWeekInVietnam = todayInVietnam.AddDays(-daysSinceMonday);
+            var startOfNextWeekInVietnam = startOfWeekInVietnam.AddDays(7);
 
-            // Tính growth rate dựa trên tổng tích lũy
+            // Convert week boundaries back to UTC for database queries
+            var startOfWeekUtc = TimeZoneInfo.ConvertTimeToUtc(startOfWeekInVietnam, vietnamTimeZone);
+            var endOfLastWeekUtc = startOfWeekUtc;          // exclusive boundary for last week
+            var endOfThisWeekUtc = TimeZoneInfo.ConvertTimeToUtc(startOfNextWeekInVietnam, vietnamTimeZone); // exclusive boundary for this week
+
+            // Filter for regular users (exclude admins and managers)
+            Expression<Func<User, bool>> isRegularUser = u =>
+                u.Role.Name.ToLower() != "admin" && u.Role.Name.ToLower() != "manager";
+
+            // Count total residents (owners + household members) at the end of last week
+            var lastWeekOwners = await dbContext.Users
+                .Where(isRegularUser)
+                .CountAsync(u => u.CreateAt < endOfLastWeekUtc);
+            var lastWeekMembers = await dbContext.HouseHoldMembers
+                .CountAsync(m => m.CreateAt < endOfLastWeekUtc);
+            var totalLastWeek = lastWeekOwners + lastWeekMembers;
+
+            // Count total residents at the end of this week
+            var thisWeekOwners = await dbContext.Users
+                .Where(isRegularUser)
+                .CountAsync(u => u.CreateAt < endOfThisWeekUtc);
+            var thisWeekMembers = await dbContext.HouseHoldMembers
+                .CountAsync(m => m.CreateAt < endOfThisWeekUtc);
+            var totalThisWeek = thisWeekOwners + thisWeekMembers;
+
+            // Calculate growth rate
             double growthRate;
             if (totalLastWeek > 0)
                 growthRate = (double)(totalThisWeek - totalLastWeek) / totalLastWeek * 100;
-            else if (totalThisWeek > 0)
-                growthRate = 100.0;
             else
-                growthRate = 0.0;
+                growthRate = totalThisWeek > 0 ? 100.0 : 0.0;
             growthRate = Math.Round(growthRate, 1);
 
-            //Mô tả xu hướng
-            var trend = growthRate >= 0
-                ? $"Increased by {growthRate}% compared to last week"
-                : $"Decreased by {Math.Abs(growthRate)}% compared to last week";
+            var trendDescription = growthRate >= 0
+                ? $"Increased compared to last week"
+                : $"Decreased compared to last week";
 
-            return new HouseHoldMemberDashBoardDTO
+            // Count current total residents (owners + household members)
+            var currentOwners = await dbContext.Users
+                .Where(isRegularUser)
+                .CountAsync();
+            var currentMembers = await dbContext.HouseHoldMembers
+                .CountAsync();
+            var totalResidents = currentOwners + currentMembers;
+
+            return new GenerateDashboardDTO
             {
-                TotalResidents = totalThisWeek,
+                Total = totalResidents,
+                Increase = totalThisWeek - totalLastWeek,
                 GrowthRatePercent = growthRate,
-                TrendDescription = trend
+                TrendDescription = trendDescription
             };
         }
     }

@@ -14,5 +14,7 @@ namespace EzConDo_Service.Interface
         Task<List<OtherServiceDTO>> GetOtherServiceAsync();
 
         Task<Guid?> DeleteOtherServiceAsync(Guid otherSerivceId);
+
+        Task GenerateMonthlyBillsAsync();
     }
 }

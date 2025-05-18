@@ -297,6 +297,7 @@ namespace Service.Service
 
             return;
         }
+
         public async Task<string>VerifyOTPAsync(string email, string Code)
         {
             var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email) ?? throw new NotFoundException($"Email {email} not found !"); ;
@@ -405,8 +406,8 @@ namespace Service.Service
             user.PhoneNumber = userDTO.PhoneNumber;
             user.Gender = userDTO.Gender;
             user.UpdateAt = DateTime.UtcNow;
+            user.DateOfBirth = DateOnly.FromDateTime(userDTO.DateOfBirth);
 
-            dbContext.Users.Update(user);
             await dbContext.SaveChangesAsync();
             return userDTO;
         }
