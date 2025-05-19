@@ -37,7 +37,7 @@ namespace EzCondo_API.Controllers
             return Ok(electricReading);
         }
 
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("Get-All-Electric")]
         public async Task<IActionResult> GetAllElectric([FromQuery] bool? status, [FromQuery] int? day, [FromQuery] int? month)
         {

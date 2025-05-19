@@ -36,7 +36,7 @@ namespace EzCondo_API.Controllers
             return Ok(waterReading);
         }
 
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("Get-All-Water")]
         public async Task<IActionResult> GetAllWater([FromQuery] bool? status, [FromQuery] int? day, [FromQuery] int? month)
         {

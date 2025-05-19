@@ -35,7 +35,7 @@ namespace EzCondo_API.Controllers
             this.dbContext = dbContext;
         }
 
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("History-Payment")]
         public async Task<IActionResult> GetAllPayments([FromQuery] string? search, int? month)
         {

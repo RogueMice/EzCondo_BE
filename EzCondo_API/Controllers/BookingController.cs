@@ -19,7 +19,7 @@ namespace EzCondo_API.Controllers
             this.bookingService = bookingService;
         }
 
-        [Authorize(Policy = "Manager")]
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("Get-All-Booking")]
         public async Task<IActionResult> GetAllBooking([FromQuery] string? search, int? month)
         {
