@@ -164,13 +164,18 @@ namespace EzConDo_Service.Implement
                 : $"Decreased compared to last week";
             var totalApartment = await dbContext.Apartments
                 .CountAsync();
+            var ownerApartment = await dbContext.Apartments
+                .Where(a => a.UserId != null)
+                .CountAsync();
             // Build DTO
             return new GenerateDashboardDTO
             {
-                Total = Math.Round((double)apartmentThisWeek / totalApartment * 100, 1),
+                Total = Math.Round((double)ownerApartment / totalApartment * 100, 1),
                 Increase = delta,
                 GrowthRatePercent = growthRate,
-                TrendDescription = trend
+                TrendDescription = trend,
+                ApartmentThisWeek = Math.Round((double)apartmentThisWeek / totalApartment * 100, 1),
+                ApartmentLastWeek = Math.Round((double) apartmentLastWeek /totalApartment * 100, 1)
             };
         }
 

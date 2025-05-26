@@ -50,7 +50,7 @@ namespace Service.Service
         public async Task<UserViewDTO> ValidateUserAsync(LoginDTO dto)
         {
             var user = await dbContext.Users
-                .SingleOrDefaultAsync(u => u.Email == dto.Email)
+                .SingleOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower())
                 ?? throw new NotFoundException("User not found.");
 
             if (user.Status.Equals("inactive", StringComparison.OrdinalIgnoreCase))

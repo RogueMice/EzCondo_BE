@@ -110,5 +110,19 @@ namespace EzCondo_API.Controllers
                 return BadRequest();
             return Ok(result);
         }
+
+        [Authorize(Policy = "Resident")]
+        [HttpPost("resident-send-feedback")]
+        public async Task<IActionResult> SendFeedback([FromBody] CreateNotificationDTO dto)
+        {
+            var userId = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null)
+                return Unauthorized();
+            Guid.TryParse(userId, out var user_Id);
+            var result = await notificationService.UserCreateNotificationAsync(dto, user_Id);
+            if (result == null)
+                return BadRequest();
+            return Ok(result);
+        }
     }
 }

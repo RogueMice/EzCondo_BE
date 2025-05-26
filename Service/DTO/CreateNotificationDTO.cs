@@ -14,7 +14,7 @@ namespace EzConDo_Service.DTO
 
         public string Content { get; set; } = null!;
 
-        public string Receiver { get; set; } = null!;
+        public string? Receiver { get; set; } 
 
         public string Type { get; set; } = null!;
 

@@ -212,7 +212,9 @@ namespace EzConDo_Service.Implement
                 Total = totalResidents,
                 Increase = totalThisWeek - totalLastWeek,
                 GrowthRatePercent = growthRate,
-                TrendDescription = trendDescription
+                TrendDescription = trendDescription,
+                ApartmentThisWeek = Math.Round((double)totalThisWeek / totalResidents * 100, 1),
+                ApartmentLastWeek = Math.Round((double) totalLastWeek / totalResidents * 100, 1)
             };
         }
     }

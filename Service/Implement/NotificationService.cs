@@ -24,8 +24,10 @@ namespace EzConDo_Service.Implement
         private readonly IFirebasePushNotificationService firebasePush;
         private readonly IHubContext<NotificationHub> hubContext;
         private readonly NotificationHub notificationHub;
+        private readonly I_incidentService incidentService;
 
-        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, IHubContext<NotificationHub> hubContext, NotificationHub notificationHub)
+        public NotificationService(ApartmentDbContext dbContext, IFirebasePushNotificationService firebasePush, IHubContext<NotificationHub> hubContext,
+            NotificationHub notificationHub)
         {
             this.dbContext = dbContext;
             this.firebasePush = firebasePush;
@@ -128,7 +130,7 @@ namespace EzConDo_Service.Implement
                                     .FirstOrDefaultAsync()
                                     .ConfigureAwait(false);
 
-            if (senderRole.ToString() == "admin")
+            if (senderRole.ToString() == "admin" && (notificationReceiver == "manager" || notificationReceiver == "all"))
             {
                 _ = Task.Run(async () =>
                 {
@@ -351,6 +353,64 @@ namespace EzConDo_Service.Implement
             }
 
             return notificationIds;
+        }
+
+        public async Task<string> UserCreateNotificationAsync(CreateNotificationDTO notificationDTO, Guid userId)
+        {
+            var notificationReceiver = notificationDTO.Receiver.ToLower();
+
+            var roleExists = await dbContext.Roles
+                .AnyAsync(r => r.Name.ToLower() == notificationReceiver)
+                .ConfigureAwait(false);
+
+            if (!roleExists)
+            {
+                throw new NotFoundException($"Role '{notificationDTO.Type}' is not found !");
+            }
+
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid(),
+                Title = notificationDTO.Title,
+                Content = notificationDTO.Content,
+                Type = notificationDTO.Type,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            //Get userId of Managers
+            var managerUserIds = await dbContext.Users
+                .Where(u => u.Role.Name.ToLower() == notificationReceiver)
+                .Select(u => u.Id)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            var receivers = managerUserIds.Select(managerId => new NotificationReceiver
+            {
+                Id = Guid.NewGuid(),
+                NotificationId = notification.Id,
+                UserId = managerId,
+                Receiver = notificationReceiver,
+                IsRead = false,
+                ReadAt = null
+            }).ToList();
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
+
+            try
+            {
+                dbContext.Notifications.Add(notification);
+                dbContext.NotificationReceivers.AddRange(receivers);
+
+                await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                await transaction.CommitAsync().ConfigureAwait(false);
+                return notification.Id.ToString();
+            }
+            catch
+            {
+                await transaction.RollbackAsync().ConfigureAwait(false);
+                throw;
+            }
         }
     }
 }

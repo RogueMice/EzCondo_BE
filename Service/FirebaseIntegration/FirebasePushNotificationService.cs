@@ -31,7 +31,8 @@ namespace EzConDo_Service.FirebaseIntegration
             catch (FirebaseMessagingException ex)
             {
                 Console.WriteLine($"[FCM] Error: {ex.MessagingErrorCode}");
-                Console.WriteLine($"[FCM] Details: {ex.InnerException?.Message}");
+                Console.WriteLine($"[FCM] Exception: {ex}");
+                Console.WriteLine($"[FCM] InnerException: {ex.InnerException}");
             }
         }
     }

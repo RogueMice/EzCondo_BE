@@ -36,6 +36,14 @@ namespace EzCondo_API.Controllers
         }
 
         [Authorize(Policy = "AdminOrManager")]
+        [HttpGet("Payment-Dashboard")]
+        public async Task<IActionResult> GetPaymentDashboard()
+        {
+            var result = await paymentService.GetPaymentDashboardAsync();
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "AdminOrManager")]
         [HttpGet("History-Payment")]
         public async Task<IActionResult> GetAllPayments([FromQuery] string? search, int? month)
         {
@@ -100,6 +108,7 @@ namespace EzCondo_API.Controllers
             var result = await paymentService.CreatePaymentForParkingAsync(paymentId, user_Id);
             return Ok(result);
         }
+
 
         [AllowAnonymous]
         [HttpPost("webhook")]

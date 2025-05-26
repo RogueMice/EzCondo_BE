@@ -178,7 +178,7 @@ namespace EzConDo_Service.Implement
             return "Update incident successfully!";
         }
 
-        public async Task<IncidentDTO> GetIncidentByUserIdAsync(Guid userId)
+        public async Task<List<IncidentDTO>> GetIncidentByUserIdAsync(Guid userId)
         {
             var incident = await dbContext.Incidents.AsNoTracking()
                 .Where(i => i.UserId == userId)
@@ -192,7 +192,7 @@ namespace EzConDo_Service.Implement
                     ReportedAt = i.ReportedAt,
                     Status = i.Status,
                     UserId = i.UserId
-                }).FirstOrDefaultAsync();
+                }).ToListAsync();
 
             return incident;
         }
@@ -284,14 +284,17 @@ namespace EzConDo_Service.Implement
             var trend = growthRate >= 0
                 ? $"Increased compared to last week"
                 : $"Decreased compared to last week";
+            var totalIncidents = await dbContext.Incidents.CountAsync();
 
             // Build DTO
             return new GenerateDashboardDTO
             {
-                Total = incidentsThisWeek,  
+                Total = totalIncidents,  
                 Increase = delta,             
                 GrowthRatePercent = growthRate,
-                TrendDescription = trend
+                TrendDescription = trend,
+                ApartmentThisWeek = Math.Round((double) incidentsThisWeek / totalIncidents * 100,1),
+                ApartmentLastWeek = Math.Round((double) incidentsLastWeek / totalIncidents * 100,1)
             };
         }
     }

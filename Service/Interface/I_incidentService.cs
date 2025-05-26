@@ -15,7 +15,7 @@ namespace EzConDo_Service.Interface
 
         Task<List<GetIncidentDTO>> GetIncidentsAsync();
 
-        Task<IncidentDTO> GetIncidentByUserIdAsync(Guid userId);
+        Task<List<IncidentDTO>> GetIncidentByUserIdAsync(Guid userId);
 
         Task<GetIncidentDTO> GetIncidentByIdAsync(Guid incidentId);
 

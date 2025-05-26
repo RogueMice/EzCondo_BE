@@ -20,6 +20,8 @@ using CloudinaryDotNet;
 using System.Text.Json;
 using Azure;
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.InkML;
+using System.Globalization;
 
 namespace EzConDo_Service.Implement
 {
@@ -172,8 +174,9 @@ namespace EzConDo_Service.Implement
 
             //generate QR code
 
-            return await CreatePaymentLink(payment.Id, 5000, "do xe");  //set default 5k
+            return await CreatePaymentLink(payment.Id, 5000, "dich vu");  //set default 5k
         }
+
 
         public async Task<object> CreatePaymentLink(Guid paymentId, int amount, string serviceName)
         {
@@ -372,6 +375,42 @@ namespace EzConDo_Service.Implement
                 })
                 .ToListAsync();
             return result;
+        }
+
+        public async Task<RevenueSummaryDTO> GetPaymentDashboardAsync()
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            var previousYear = currentYear - 1;
+
+            var currentYearPayments = await dbContext.Payments
+                .Where(p => p.Status == "completed" && p.CreateDate.Year == currentYear)
+                .ToListAsync();
+
+            var previousYearTotal = await dbContext.Payments
+                .Where(p => p.Status == "completed" && p.CreateDate.Year == previousYear)
+                .SumAsync(p => p.Amount);
+
+            var monthlyRevenue = currentYearPayments
+                .GroupBy(p => p.CreateDate.Month)
+                .Select(g => new MonthlyRevenueDTO
+                {
+                    Month = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(g.Key),
+                    Value = g.Sum(x => x.Amount)
+                })
+                .OrderBy(m => DateTime.ParseExact(m.Month, "MMM", CultureInfo.InvariantCulture).Month)
+                .ToList();
+
+            var totalRevenue = monthlyRevenue.Sum(x => x.Value);
+            var percentChange = previousYearTotal == 0
+                ? 100
+                : (int)Math.Round(((totalRevenue - previousYearTotal) / previousYearTotal) * 100);
+
+            return new RevenueSummaryDTO
+            {
+                TotalRevenue = totalRevenue,
+                PercentChange = percentChange,
+                MonthlyRevenue = monthlyRevenue
+            };
         }
     }
 }

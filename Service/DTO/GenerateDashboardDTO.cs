@@ -15,5 +15,9 @@ namespace EzConDo_Service.DTO
         public double GrowthRatePercent { get; set; }
 
         public string TrendDescription { get; set; }
+
+        public double ApartmentThisWeek { get; set; }
+
+        public double ApartmentLastWeek { get; set; }
     }
 }

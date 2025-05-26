@@ -124,9 +124,23 @@ namespace EzConDo_Service.Implement
                 {
                     Id = b.Id,
                     ServiceName = b.Service.ServiceName,
+                    ServiceId = b.ServiceId,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
-                    Status = b.Status
+                    Status = b.Status,
+                    Price = b.Payments
+                           .OrderByDescending(p => p.CreateDate)
+                           .Select(p => p.Amount)
+                           .FirstOrDefault(),
+                    CreateDate = b.Payments.Cast<Payment>()
+                           .OrderByDescending(p => p.CreateDate)
+                           .Select(p => p.CreateDate)
+                           .FirstOrDefault(),
+                    Method = b.Payments.Cast<Payment>()
+                           .OrderByDescending(p => p.CreateDate)
+                           .Select(p => p.Method)
+                           .FirstOrDefault()
+
                 })
                 .ToListAsync();
             return result;

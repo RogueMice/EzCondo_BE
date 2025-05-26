@@ -308,14 +308,34 @@ namespace EzConDo_Service.Implement
 
         public async Task<Guid> DeleteParkingLotDetailAsync(Guid id)
         {
-            var parkingLotDetail = await dbContext.ParkingLotDetails.FirstOrDefaultAsync(pd => pd.Id == id)
+            using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+            var parkingLotDetail = await dbContext.ParkingLotDetails
+                .FirstOrDefaultAsync(pd => pd.Id == id)
                 ?? throw new NotFoundException($"Not found parking lot detail {id}");
-            var parkingLot = await dbContext.ParkingLots
-                .FirstOrDefaultAsync(pl => pl.Id == parkingLotDetail.ParkingLotId)
-                ?? throw new NotFoundException($"Not found parking lot {parkingLotDetail.ParkingLotId}");
+
+            var parkingLotId = parkingLotDetail.ParkingLotId;
+
             dbContext.ParkingLotDetails.Remove(parkingLotDetail);
-            dbContext.ParkingLots.Remove(parkingLot);
             await dbContext.SaveChangesAsync();
+
+            // Kiểm tra xem còn chi tiết nào khác dùng chung ParkingLot không
+            bool hasOtherDetails = await dbContext.ParkingLotDetails
+                .AnyAsync(pd => pd.ParkingLotId == parkingLotId);
+
+            if (!hasOtherDetails)
+            {
+                var parkingLot = await dbContext.ParkingLots
+                    .FirstOrDefaultAsync(pl => pl.Id == parkingLotId);
+
+                if (parkingLot != null)
+                {
+                    dbContext.ParkingLots.Remove(parkingLot);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+
+            await transaction.CommitAsync();
             return parkingLotDetail.Id;
         }
 
@@ -631,13 +651,17 @@ namespace EzConDo_Service.Implement
             var trend = growthRate >= 0
                 ? "Increased compared to last week"
                 : "Decreased compared to last week";
-
+            var totalParkings = await dbContext.ParkingLotDetails
+                .Where(d => d.Status.ToLower() != "pending")
+                .CountAsync();
             return new GenerateDashboardDTO
             {
-                Total = cardCountThisWeek,
+                Total = totalParkings,
                 Increase = delta,
                 GrowthRatePercent = growthRate,
-                TrendDescription = trend
+                TrendDescription = trend,
+                ApartmentThisWeek = Math.Round((double) cardCountThisWeek / totalParkings * 100, 1),
+                ApartmentLastWeek = Math.Round((double)cardCountLastWeek / totalParkings * 100, 1)
             };
         }
     }

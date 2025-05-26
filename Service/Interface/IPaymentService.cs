@@ -28,5 +28,7 @@ namespace EzConDo_Service.Interface
         Task<List<MyPaymentViewDTO>> GetMyPaymentsAsync(Guid userId);
 
         Task<List<MyPaymentViewDTO>> GetNeedMyPaymentsAsync(Guid userId);
+
+        Task<RevenueSummaryDTO> GetPaymentDashboardAsync();
     }
 }

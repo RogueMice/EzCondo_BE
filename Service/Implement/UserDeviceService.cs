@@ -47,6 +47,7 @@ namespace EzConDo_Service.Implement
                     throw new ArgumentNullException(nameof(dto.IsActive), "IsActive cannot be null.");
                 }
 
+                userDevice.FcmToken = dto.FcmToken;
                 userDevice.IsActive = (bool)dto.IsActive;
             }
 
