@@ -1,4 +1,5 @@
-﻿using FirebaseAdmin.Messaging;
+﻿using Azure;
+using FirebaseAdmin.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,22 @@ namespace EzConDo_Service.FirebaseIntegration
             try
             {
                 var response = await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message);
+                Console.WriteLine($"[FCM] Tổng số token gửi: {message.Tokens.Count}");
                 Console.WriteLine($"[FCM] Gửi thành công: {response.SuccessCount} | Thất bại: {response.FailureCount}");
+
+                for (int i = 0; i < response.Responses.Count; i++)
+                {
+                    var token = message.Tokens[i];
+                    var res = response.Responses[i];
+                    if (res.IsSuccess)
+                    {
+                        Console.WriteLine($"[FCM] Token {token} nhận thông báo thành công.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[FCM] Token {token} gửi thất bại: {res.Exception?.Message}");
+                    }
+                }
             }
             catch (FirebaseMessagingException ex)
             {

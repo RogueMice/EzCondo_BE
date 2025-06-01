@@ -39,7 +39,6 @@ namespace EzConDo_Service.Implement
         {
             var notificationReceiver = notificationDTO.Receiver.ToLower();
 
-            // Validate role
             if (notificationReceiver != "all")
             {
                 var roleExists = await dbContext.Roles
@@ -62,83 +61,86 @@ namespace EzConDo_Service.Implement
                 CreatedAt = DateTime.UtcNow
             };
 
-            var userIds = notificationReceiver == "all"
-                ? await dbContext.Users.Select(u => u.Id).ToListAsync().ConfigureAwait(false)
-                : await dbContext.Users
-                    .Where(u => u.Role.Name.ToLower() == notificationReceiver)
-                    .Select(u => u.Id)
+            // Add notification entity first
+            dbContext.Notifications.Add(notification);
+            await dbContext.SaveChangesAsync().ConfigureAwait(false);
+
+            // Batch size for processing users and sending notifications
+            const int batchSize = 1000;
+
+            IQueryable<Guid> userIdsQuery = notificationReceiver == "all"
+                ? dbContext.Users.Select(u => u.Id)
+                : dbContext.Users.Where(u => u.Role.Name.ToLower() == notificationReceiver).Select(u => u.Id);
+
+            // Process users in batches to avoid loading all into memory
+            int totalUsers = await userIdsQuery.CountAsync();
+            for (int i = 0; i < totalUsers; i += batchSize)
+            {
+                var batchUserIds = await userIdsQuery
+                    .OrderBy(id => id)  // Order is important for paging consistency
+                    .Skip(i)
+                    .Take(batchSize)
                     .ToListAsync()
                     .ConfigureAwait(false);
 
-            var receivers = userIds.Select(userId => new NotificationReceiver
-            {
-                Id = Guid.NewGuid(),
-                NotificationId = notification.Id,
-                UserId = userId,
-                Receiver = notificationReceiver,
-                IsRead = false,
-                ReadAt = null
-            }).ToList();
+                var receivers = batchUserIds.Select(uid => new NotificationReceiver
+                {
+                    Id = Guid.NewGuid(),
+                    NotificationId = notification.Id,
+                    UserId = uid,
+                    Receiver = notificationReceiver,
+                    IsRead = false,
+                    ReadAt = null
+                }).ToList();
 
-            await using var transaction = await dbContext.Database.BeginTransactionAsync().ConfigureAwait(false);
-
-            try
-            {
-                dbContext.Notifications.Add(notification);
                 dbContext.NotificationReceivers.AddRange(receivers);
-
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                await transaction.CommitAsync().ConfigureAwait(false);
-            }
-            catch
-            {
-                await transaction.RollbackAsync().ConfigureAwait(false);
-                throw;
-            }
 
-            // 1) Lấy danh sách fcm_token từ user_device
-            var deviceTokens = await dbContext.UserDevices
-                .Where(ud => userIds.Contains(ud.UserId) && ud.IsActive)
-                .Select(ud => ud.FcmToken)
-                .ToListAsync();
+                // Fetch device tokens for the batch
+                var deviceTokens = await dbContext.UserDevices
+                    .Where(ud => batchUserIds.Contains(ud.UserId) && ud.IsActive)
+                    .Select(ud => ud.FcmToken)
+                    .Distinct()
+                    .ToListAsync()
+                    .ConfigureAwait(false);
 
-            // 2) gửi thông báo đẩy
-            if (deviceTokens.Any())
-            {
-                await firebasePush.SendPushNotificationAsync(
-                                        notification.Title,
-                                        notification.Content,
-                                        deviceTokens);
+                // Send push notifications in batches to Firebase (max 1000 tokens per batch)
+                const int fcmBatchSize = 1000;
+                for (int j = 0; j < deviceTokens.Count; j += fcmBatchSize)
+                {
+                    var batchTokens = deviceTokens.Skip(j).Take(fcmBatchSize).ToList();
+                    _ = Task.Run(() => firebasePush.SendPushNotificationAsync(
+                        notification.Title,
+                        notification.Content,
+                        batchTokens));
+                }
             }
 
-            //Data send to SignalR
-            var notificationData = new
-            {
-                Id = notification.Id,
-                Title = notification.Title,
-                Content = notification.Content,
-                Type = notification.Type,
-                CreatedAt = notification.CreatedAt,
-                IsRead = false,
-                Receiver = notificationReceiver
-            };
-
-            //Send notification to managers use real-time SignalR but not wait for response
+            // SignalR notification: send asynchronously in background if sender is admin and target is manager or all
             var senderRole = await dbContext.Users
-                                    .Where(u => u.Id == userId)
-                                    .Select(u => u.Role.Name)
-                                    .FirstOrDefaultAsync()
-                                    .ConfigureAwait(false);
+                .Where(u => u.Id == userId)
+                .Select(u => u.Role.Name)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
 
-            if (senderRole.ToString() == "admin" && (notificationReceiver == "manager" || notificationReceiver == "all"))
+            if (senderRole == "admin" && (notificationReceiver == "manager" || notificationReceiver == "all"))
             {
+                var notificationData = new
+                {
+                    Id = notification.Id,
+                    Title = notification.Title,
+                    Content = notification.Content,
+                    Type = notification.Type,
+                    CreatedAt = notification.CreatedAt,
+                    IsRead = false,
+                    Receiver = notificationReceiver
+                };
+
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await notificationHub
-                            .Clients.Group("Managers")
-                            .SendAsync("ReceiveNotification", notificationData);
+                        await notificationHub.Clients.Group("Managers").SendAsync("ReceiveNotification", notificationData);
                     }
                     catch (Exception ex)
                     {
@@ -147,8 +149,9 @@ namespace EzConDo_Service.Implement
                 });
             }
 
-                return notification.Id;
+            return notification.Id;
         }
+
 
         public async Task<NotificationListDTO> GetNotificationsAsync(bool? isRead, int page, int pageSize, Guid userId, string? type)
         {

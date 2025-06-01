@@ -1,0 +1,37 @@
+{
+  "AppSettings": {
+    "Token": "aVeryLongSecretKeyThatIsAtLeast64CharactersLongForHmacSha512125126161124122222!@$!@!@^!@!@%!@%!@51"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "Default": "Data Source=ROGUEMICE\\SQLEXPRESS;Initial Catalog=Apartment_db;Integrated Security=True;Trust Server Certificate=True"
+  },
+  "EmailSettings": {
+    "SmtpServer": "smtp.gmail.com",
+    "Port": ,
+    "SenderEmail": "",
+    "SenderPassword": "",
+    "EnableSSL": true
+  },
+  "CloudinarySettings": {
+    "CloudName": "",
+    "ApiKey": "",
+    "ApiSecret": ""
+  },
+  "PayOsSettings": {
+    "BankCode": "",
+    "AccountName": "",
+    "VietQRBaseUrl": "https://api.vietqr.io/image/"
+  },
+  "PayOS": {
+    "ClientID": "",
+    "ApiKey": "",
+    "ChecksumKey": ""
+  }
+}

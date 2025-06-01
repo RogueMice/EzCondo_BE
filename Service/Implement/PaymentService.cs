@@ -55,7 +55,7 @@ namespace EzConDo_Service.Implement
 
             if (existingPayment != null)
             {
-                return await CreatePaymentLink(existingPayment.Id, (int)existingPayment.Amount, booking.Service.ServiceName);
+                return await CreatePaymentLink(existingPayment.Id, 5000, booking.Service.ServiceName);
             }
 
             //Get price's month or year

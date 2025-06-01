@@ -116,7 +116,7 @@ namespace EzConDo_Service.Implement
             var query = dbContext.Bookings
                 .Include(b => b.Service)
                 .Where(b => b.UserId == userId
-                && b.Status.ToLower() == "completed" || b.Status == "in_use");
+                && (b.Status.ToLower() == "completed" || b.Status == "in_use"));
 
             var result = await query
                 .OrderByDescending(b => b.StartDate)
