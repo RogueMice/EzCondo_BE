@@ -1,77 +1,67 @@
-🏢 EZCondo - Condo Management Backend
-🔰 Introduction
-EZCondo is a modern condominium (condo) management system designed for residents, property managers, and the administrative board. It centralizes key operations and communications in one platform, improving efficiency and organization for multi-unit residential communities.
+# 🏢 EZCondo - Condo Management Backend
 
-This repository contains the backend API, built with ASP.NET Core (.NET 8), providing endpoints for core functionalities like resident management, maintenance requests, and announcements.
+### 🔰 Introduction
 
-🚀 Main Features
-🔐 Authentication & Authorization (JWT)
+**EZCondo** is a modern condominium (condo) management system designed for residents, property managers, and the administrative board. It centralizes key operations and communications in one platform, improving efficiency and organization for multi-unit residential communities.
 
-🧾 CRUD Operations
+This repository contains the **backend API**, built with **ASP.NET Core (.NET 8)**, providing endpoints for core functionalities like resident management, maintenance requests, and announcements.
 
-💸 Mobile Payment Scanning
+---
 
-📧 Email Notifications
+### 🚀 Main Features
 
-📁 Import/Export Excel
+- 🔐 **Authentication & Authorization** (JWT)
+- 🧾 **CRUD Operations**
+- 💸 **Mobile Payment Scanning**
+- 📧 **Email Notifications**
+- 📁 **Import/Export Excel**
+- 🔔 **Real-time Notifications** (SignalR for Web, Firebase for App)
+- ☁️ **Image Storage on Cloudinary**
 
-🔔 Real-time Notifications (SignalR for Web, Firebase for App)
+---
 
-☁️ Image Storage on Cloudinary
+### 📦 Technologies Used
 
-📦 Technologies Used
-ASP.NET Core (.NET 8)
+- **ASP.NET Core (.NET 8)**
+- **SQL Server**
+- **JWT (JSON Web Tokens)**
+- **Swagger (OpenAPI)**
+- **Firebase**
+- **SignalR**
+- **PayOS**
+- **MailKit**
+- **ClosedXML**
+- **Cloudinary**
+- **Hangfire**
 
-SQL Server
+---
 
-JWT (JSON Web Tokens)
+### 🧩 Features
 
-Swagger (OpenAPI)
+- **Resident Management** – Create, view, update, and delete resident profiles.
+- **Maintenance Requests** – Submit and track repair/maintenance requests.
+- **Community Announcements** – Post and manage notices or bulletins.
+- **Payment Tracking** – Record and manage condo fees and payment history.
+- **Visitor Management** – Track visitor check-ins and approvals.
+- **Document Sharing** – Share rules, policies, meeting minutes, etc.
 
-Firebase
+---
 
-SignalR
+### 💻 Prerequisites
 
-PayOS
+- [.NET 8 SDK](https://dotnet.microsoft.com/)
+- SQL Server instance running
+- [ngrok](https://ngrok.com/) *(optional)*
+- Postman *(optional)*
+- Visual Studio 2022 / VS Code
 
-MailKit
+---
 
-ClosedXML
+### ⚙️ Setup & Configuration
 
-Cloudinary
-
-Hangfire
-
-🧩 Features
-Resident Management – Create, view, update, and delete resident profiles.
-
-Maintenance Requests – Submit and track repair/maintenance requests.
-
-Community Announcements – Post and manage notices or bulletins.
-
-Payment Tracking – Record and manage condo fees and payment history.
-
-Visitor Management – Track visitor check-ins and approvals.
-
-Document Sharing – Share rules, policies, meeting minutes, etc.
-
-💻 Prerequisites
-.NET 8 SDK
-
-SQL Server instance running
-
-ngrok (optional)
-
-Postman (optional)
-
-Visual Studio 2022 / VS Code
-
-⚙️ Setup & Configuration
-bash
-Copy
-Edit
+```bash
 # Clone the repository
-git clone https://github.com/yourusername/EZCondoBackend.git
+git clone https://github.com/RogueMice/EzCondo_BE
 
 # Navigate into project directory
 cd EZCondoBackend
@@ -79,54 +69,62 @@ cd EZCondoBackend
 # Restore and build
 dotnet restore
 dotnet build
-🔧 Configuration
-Open appsettings.json.
+```
 
-Update ConnectionStrings with your SQL Server credentials.
+#### 🔧 Configuration
 
-Set JWT secrets and other required values.
+- Open `appsettings.json`.
+- Update `ConnectionStrings` with your SQL Server credentials.
+- Set JWT secrets and other required values.
 
-▶️ Running the API
-bash
-Copy
-Edit
+---
+
+### ▶️ Running the API
+
+```bash
 dotnet run
-Default URL:
-http://localhost:5000
-https://localhost:5001
+```
 
-🌐 Optional: Expose with ngrok
-bash
-Copy
-Edit
+- Default URL:  
+  `http://localhost:7254`  
+
+#### 🌐 Optional: Expose with ngrok
+
+```bash
 ngrok http 7254
-Example:
-https://1234abcd.ngrok.io/swagger
+```
 
-🧪 API Testing
-Swagger UI:
-https://localhost:5001/swagger
+- Example:  
+  `https://1234abcd.ngrok.io/swagger`
 
-Postman:
+---
 
-Import collection or manually add requests.
+### 🧪 API Testing
 
-Add JWT to headers:
+- **Swagger UI**:  
+  `https://localhost:7254/swagger`
 
-makefile
-Copy
-Edit
-Authorization: Bearer <your-jwt-token>
-🤝 Contributing
+- **Postman**:
+  - Import collection or manually add requests.
+  - Add JWT to headers:  
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+---
+
+### 🤝 Contributing
+
 Contributions are welcome!
 
-Fork the repo and create a new branch.
-
-Make your changes and commit.
-
-Open a pull request.
+1. Fork the repo and create a new branch.
+2. Make your changes and commit.
+3. Open a pull request.
 
 Please follow coding conventions and feel free to open issues for bugs or suggestions.
 
-📬 Contact
+---
+
+### 📬 Contact
+
 For support or questions, open an issue or contact the maintainers.
