@@ -42,7 +42,7 @@ This repository contains the **backend API**, built with **ASP.NET Core (.NET 8)
 - **Incident Management** – View,create,update incident in the apartment.
 - **Community Announcements** – Post and manage notices or bulletins.
 - **Payment Tracking** – Record and manage condo fees and payment history.
-- **Service Management** – Manage various services such as cleaning, repairs, and scheduled maintenance. Allows creating, updating, assigning staff, tracking progress, and collecting feedback upon completion..
+- **Service Management** – Manage various services such as cleaning, repairs,gym, .... Allows creating, updating, feedback ..
 ---
 
 ### 💻 Prerequisites
