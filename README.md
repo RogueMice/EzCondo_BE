@@ -39,12 +39,10 @@ This repository contains the **backend API**, built with **ASP.NET Core (.NET 8)
 ### 🧩 Features
 
 - **Resident Management** – Create, view, update, and delete resident profiles.
-- **Maintenance Requests** – Submit and track repair/maintenance requests.
+- **Incident Management** – View,create,update incident in the apartment.
 - **Community Announcements** – Post and manage notices or bulletins.
 - **Payment Tracking** – Record and manage condo fees and payment history.
-- **Visitor Management** – Track visitor check-ins and approvals.
-- **Document Sharing** – Share rules, policies, meeting minutes, etc.
-
+- **Service Management** – Manage various services such as cleaning, repairs, and scheduled maintenance. Allows creating, updating, assigning staff, tracking progress, and collecting feedback upon completion..
 ---
 
 ### 💻 Prerequisites
